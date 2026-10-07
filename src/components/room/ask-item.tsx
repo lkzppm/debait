@@ -25,7 +25,7 @@ function useLost(at: number, pending: boolean): boolean {
 }
 
 /** The call with its @handle highlighted. */
-function Mention({ text }: { text: string }) {
+export function Mention({ text }: { text: string }) {
   const parts = text.split(new RegExp(`(${MENTION})`, "i"));
   return (
     <>

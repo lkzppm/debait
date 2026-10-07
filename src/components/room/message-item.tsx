@@ -1,7 +1,7 @@
 "use client";
 
-import { AtSign, Check, ChevronDown, RotateCw, TriangleAlert } from "lucide-react";
-import { motion } from "motion/react";
+import { Check, ChevronDown, Reply, RotateCw, TriangleAlert } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { Deb, verdictMood } from "@/components/site/deb";
 import { Debater } from "@/components/site/debater";
@@ -55,6 +55,21 @@ export function StatusTag({ status, children }: { status: ValidationStatus; chil
       {(status === "false" || status === "imprecise") && <TriangleAlert className="size-3" />}
       {children}
     </Tag>
+  );
+}
+
+/** A panel inside Deb's bubble that slides open to its height and fades in, and folds away the same way. */
+function Unfold({ className, children }: { className?: string; children: React.ReactNode }) {
+  return (
+    <motion.div
+      initial={{ height: 0, opacity: 0 }}
+      animate={{ height: "auto", opacity: 1 }}
+      exit={{ height: 0, opacity: 0 }}
+      transition={{ height: { type: "spring", stiffness: 420, damping: 38 }, opacity: { duration: 0.2 } }}
+      className="overflow-hidden"
+    >
+      <div className={className}>{children}</div>
+    </motion.div>
   );
 }
 
@@ -158,8 +173,8 @@ export function MessageItem({ message, name, canAct, onAsk, onRetry }: MessageIt
           className="mt-1.5 size-6 shrink-0 text-bot"
           title={BRAND.bot.name}
         />
-        <div className={cn("flex min-w-0 flex-1 flex-col gap-2 text-sm", right && "items-end")}>
-          <div className={cn("w-fit max-w-full rounded-2xl border border-bot/25 bg-card", right ? "rounded-tr-sm" : "rounded-tl-sm")}>
+        <div className={cn("flex min-w-0 flex-1 items-end gap-1.5 text-sm", right && "flex-row-reverse")}>
+          <div className={cn("w-fit max-w-full min-w-0 rounded-2xl border border-bot/25 bg-card", right ? "rounded-tr-sm" : "rounded-tl-sm")}>
             {!judgement && !message.failed && (
               <p className="px-3.5 py-2.5 text-muted-foreground">
                 <span className="shimmer">{t.feed.judging}</span>
@@ -243,56 +258,71 @@ export function MessageItem({ message, name, canAct, onAsk, onRetry }: MessageIt
 
                 {judgement.note && <p className="px-3.5 pb-2.5 text-left text-[15px] leading-relaxed">{judgement.note}</p>}
 
-                {opened && (
-                  <div className="border-t border-destructive/40 p-3.5 text-left">
-                    <p className="eyebrow text-destructive">
-                      {t.fallacies[opened.type].name}
-                      <span className="ml-3 text-muted-foreground">{t.feed.severity(opened.severity)}</span>
-                    </p>
-                    <p className="mt-2 text-sm text-muted-foreground">{t.fallacies[opened.type].definition}</p>
-                    <p className="mt-2 text-[15px]">{judgement.fallacies[opened.index].explanation}</p>
-                  </div>
-                )}
+                {/* Switching from one flag to another folds the first away and unfolds the next. */}
+                <AnimatePresence initial={false} mode="wait">
+                  {opened && (
+                    <Unfold key={openPenalty} className="border-t border-destructive/40 p-3.5 text-left">
+                      <p className="eyebrow text-destructive">
+                        {t.fallacies[opened.type].name}
+                        <span className="ml-3 text-muted-foreground">{t.feed.severity(opened.severity)}</span>
+                      </p>
+                      <p className="mt-2 text-sm text-muted-foreground">{t.fallacies[opened.type].definition}</p>
+                      <p className="mt-2 text-[15px]">{judgement.fallacies[opened.index].explanation}</p>
+                    </Unfold>
+                  )}
+                </AnimatePresence>
 
-                {showRubric && (
-                  <div className="grid grid-cols-2 gap-x-5 gap-y-3 border-t border-border p-3.5 text-left sm:grid-cols-4">
-                    {QUALITY_KEYS.map((key) => {
-                      const skipped = key === "rebuttal" && message.isOpening;
-                      const value = judgement.quality[key];
-                      return (
-                        <div key={key}>
-                          <div className="flex items-baseline justify-between gap-2">
-                            <span className="eyebrow text-muted-foreground">{t.quality[key]}</span>
-                            <span className="font-mono text-sm tabular-nums">{skipped ? t.feed.notApplicable : value}</span>
+                <AnimatePresence initial={false}>
+                  {showRubric && (
+                    <Unfold className="grid grid-cols-2 gap-x-5 gap-y-3 border-t border-border p-3.5 text-left sm:grid-cols-4">
+                      {QUALITY_KEYS.map((key) => {
+                        const skipped = key === "rebuttal" && message.isOpening;
+                        const value = judgement.quality[key];
+                        return (
+                          <div key={key}>
+                            <div className="flex items-baseline justify-between gap-2">
+                              <span className="eyebrow text-muted-foreground">{t.quality[key]}</span>
+                              <span className="font-mono text-sm tabular-nums">{skipped ? t.feed.notApplicable : value}</span>
+                            </div>
+                            {/* Ten cells, lit up to the rating. */}
+                            <div className="mt-1.5 flex gap-px">
+                              {/* The lit cells come on one after another as the rubric opens. */}
+                              {Array.from({ length: 10 }, (_, cell) =>
+                                !skipped && cell < value ? (
+                                  <motion.span
+                                    key={cell}
+                                    initial={{ opacity: 0.15 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: 0.08 + cell * 0.03, duration: 0.2 }}
+                                    className={cn("h-2 flex-1", sideBg(message.seat))}
+                                  />
+                                ) : (
+                                  <span key={cell} className="h-2 flex-1 bg-muted" />
+                                ),
+                              )}
+                            </div>
                           </div>
-                          {/* Ten cells, lit up to the rating. */}
-                          <div className="mt-1.5 flex gap-px">
-                            {Array.from({ length: 10 }, (_, cell) => (
-                              <span key={cell} className={cn("h-2 flex-1", !skipped && cell < value ? sideBg(message.seat) : "bg-muted")} />
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {message.isOpening && <p className="col-span-full text-xs text-muted-foreground">{t.feed.openingNote}</p>}
-                  </div>
-                )}
+                        );
+                      })}
+                      {message.isOpening && <p className="col-span-full text-xs text-muted-foreground">{t.feed.openingNote}</p>}
+                    </Unfold>
+                  )}
+                </AnimatePresence>
               </>
             )}
           </div>
 
+          {/* A claim Deb can check: the reply arrow beside her bubble starts a call to her about this message. */}
           {judgement && score && canAct && !validation && checkable && (
-            <p className={cn("flex flex-wrap items-center gap-x-2 gap-y-1 px-1 text-xs text-muted-foreground", right && "flex-row-reverse")}>
-              <span>{t.feed.canCheck}</span>
-              <button
-                type="button"
-                onClick={() => onAsk(message.id)}
-                className="inline-flex items-center gap-0.5 rounded-full border border-side-a/60 px-2.5 py-1 text-side-a hover:bg-side-a/15"
-              >
-                <AtSign className="size-3" />
-                {BRAND.bot.handle}
-              </button>
-            </p>
+            <button
+              type="button"
+              onClick={() => onAsk(message.id)}
+              aria-label={t.feed.askBot}
+              title={t.feed.askBot}
+              className="grid size-8 shrink-0 place-items-center rounded-full border border-bot/30 text-bot transition-[background-color,scale] hover:scale-110 hover:bg-bot/10"
+            >
+              <Reply className={cn("size-4", right && "-scale-x-100")} />
+            </button>
           )}
         </div>
       </div>

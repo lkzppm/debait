@@ -3,7 +3,9 @@
 import { ArrowLeft, Receipt, Trophy } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { LEVEL_FACE } from "@/components/admin/level-picker";
 import { CubesField } from "@/components/cubes/cubes-canvas";
+import { Deb } from "@/components/site/deb";
 import { Dialog } from "@/components/site/dialog";
 import { LocaleSwitch } from "@/components/site/locale-switch";
 import { ThemeSwitch } from "@/components/site/theme-switch";
@@ -99,6 +101,7 @@ export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
   );
 
   const mock = engine === "mock" || state.mock;
+  const level = `${t.admin.strictness}: ${t.strictness[meta.format.strictness].name}`;
 
   return (
     <div className="relative flex h-dvh flex-col overflow-hidden">
@@ -129,9 +132,15 @@ export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
               </span>
             </p>
           </div>
-          <Tag className="hidden text-muted-foreground sm:inline-flex" title={t.strictness[meta.format.strictness].hint}>
-            {t.strictness[meta.format.strictness].name}
-          </Tag>
+          {/* Deb's level as her face for it: pleased, neutral or stern. */}
+          <span
+            role="img"
+            aria-label={level}
+            title={`${level}. ${t.strictness[meta.format.strictness].hint}`}
+            className="grid size-8 shrink-0 place-items-center rounded-full border border-input text-bot"
+          >
+            <Deb mood={LEVEL_FACE[meta.format.strictness]} className="size-4" />
+          </span>
           {mock && (
             <Tag className="border-warning/50 text-warning" title={t.room.mockBanner}>
               {t.common.mock}
@@ -141,13 +150,6 @@ export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
             <Pill type="button" size="sm" onClick={() => setResultOpen(true)} aria-haspopup="dialog">
               <Trophy />
               <span className="hidden sm:inline">{t.result.title}</span>
-            </Pill>
-          )}
-          {state.status !== "lobby" && (
-            <Pill type="button" variant="outline" size="sm" onClick={() => setLedgerOpen(true)} aria-haspopup="dialog">
-              <Receipt />
-              <span className="hidden sm:inline">{t.panel.ledger}</span>
-              {state.ledger.length > 0 && <span className="font-mono tabular-nums">{state.ledger.length}</span>}
             </Pill>
           )}
           <LocaleSwitch />
@@ -175,8 +177,27 @@ export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
           <>
             <Meter meta={meta} state={state} names={names} pulse={state.ledger.length} pulseDir={pulseDir} glitch={glitch} />
 
-            <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
-              <div ref={feedRef} className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto scrollbar-none pb-2">
+            <main className="relative flex min-h-0 min-w-0 flex-1 flex-col gap-3">
+              {/* Floating over the feed's top right corner, as Deb's help floats over its bottom one. */}
+              <button
+                type="button"
+                onClick={() => setLedgerOpen(true)}
+                aria-haspopup="dialog"
+                aria-label={t.panel.ledger}
+                title={t.panel.ledger}
+                className="absolute top-2 right-2 z-10 grid size-10 place-items-center rounded-full border border-border bg-popover shadow-lg shadow-black/20 transition-[background-color,scale] hover:scale-110 hover:bg-accent sm:right-3"
+              >
+                <Receipt className="size-5" />
+              </button>
+              {/* Room at the bottom for Deb's floating help button over the composer. */}
+              <div
+                ref={feedRef}
+                // Faded at both edges, with padding so the first and last messages rest clear of the fade.
+                className={cn(
+                  "fade-y flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto scrollbar-none pt-5",
+                  identity && !finished ? "pb-14" : "pb-8",
+                )}
+              >
                   {state.timeline.length === 0 && live && (
                     <p className="m-auto text-lg text-muted-foreground">{t.feed.opens(names.a)}</p>
                   )}
