@@ -76,13 +76,16 @@ export function Meter({ meta, state, names, pulse, pulseDir, glitch }: MeterProp
         className="relative mt-2.5 h-8 overflow-hidden border border-border sm:mt-3 sm:h-10"
       >
         <CubesBand share={state.share} pulse={pulse} pulseDir={pulseDir} glitch={glitch} provisional={state.provisional} rows={3} />
+        {/* On the band rather than under it, so the meter keeps its height when the label comes and goes. */}
+        {state.provisional && (
+          <span
+            className="eyebrow absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-background/85 px-2 py-0.5 text-muted-foreground"
+            title={t.meter.provisionalHint}
+          >
+            {t.meter.provisional}
+          </span>
+        )}
       </div>
-
-      {state.provisional && (
-        <p className="eyebrow mt-2 text-center text-muted-foreground" title={t.meter.provisionalHint}>
-          {t.meter.provisional}
-        </p>
-      )}
     </section>
   );
 }

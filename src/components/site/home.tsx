@@ -1,21 +1,25 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Cpu } from "lucide-react";
 import { motion } from "motion/react";
+import { siNextdotjs, siVercel, siWebgpu } from "simple-icons";
 import { CubesField } from "@/components/cubes/cubes-canvas";
 import { FALLACY_IDS } from "@/i18n/fallacies";
 import { useT } from "@/i18n/LocaleProvider";
 import { BRAND } from "@/lib/brand";
 import { QUALITY_KEYS } from "@/lib/debate/types";
 import { cn } from "@/lib/utils";
+import { BrandIcon } from "./brand-icon";
 import { Demo } from "./demo";
+import { Footer } from "./footer";
 import { HeroMark } from "./hero-mark";
 
+// simple-icons has no Groq mark: a chip stands in for it (Groq runs the models on its own LPU chips).
 const STACK = [
-  { label: "Groq", href: "https://groq.com" },
-  { label: "Next.js", href: "https://nextjs.org" },
-  { label: "WebGPU · vgpu", href: "https://vgpu.sh" },
-  { label: "Vercel", href: "https://vercel.com" },
+  { label: "Groq", href: "https://groq.com", icon: <Cpu className="size-3.5" /> },
+  { label: "Next.js", href: "https://nextjs.org", icon: <BrandIcon icon={siNextdotjs} className="size-3.5" /> },
+  { label: "WebGPU · vgpu", href: "https://vgpu.sh", icon: <BrandIcon icon={siWebgpu} className="size-3.5" /> },
+  { label: "Vercel", href: "https://vercel.com", icon: <BrandIcon icon={siVercel} className="size-3.5" /> },
 ];
 
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -84,7 +88,7 @@ export function Home() {
                       rel="noreferrer noopener"
                       className="inline-flex items-center gap-2 py-1 font-mono text-xs text-muted-foreground transition-[color,translate] hover:-translate-y-0.5 hover:text-side-a"
                     >
-                      <span className="size-1.5 bg-current" />
+                      {item.icon}
                       {item.label}
                     </a>
                   </li>
@@ -107,7 +111,7 @@ export function Home() {
         <section id="how" className="scroll-mt-20 border-y border-border bg-background">
           <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-20">
             <Reveal>
-              <h2 className="eyebrow mb-10 text-side-a">{t.home.demo.title}</h2>
+              <h2 className="eyebrow mb-10 text-side-a">{t.home.demo.title(BRAND.name)}</h2>
               <Demo />
             </Reveal>
 
@@ -125,9 +129,7 @@ export function Home() {
           </div>
         </section>
 
-        <footer className="mx-auto max-w-6xl px-4 py-8 text-sm text-muted-foreground sm:px-6">
-          <span className="bg-background px-1">{t.home.footer}</span>
-        </footer>
+        <Footer />
       </main>
     </div>
   );

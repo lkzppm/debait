@@ -57,12 +57,17 @@ export const pt: Dictionary = {
     join: "Entrar numa sala",
     discover: "Como funciona",
     demo: {
-      title: "Um debate, passo a passo",
+      title: (name) => `Como funciona um ${name}`,
       chat: "Chat",
-      score: "Placar",
       meter: "Medidor",
       first: "Home office aumenta a produtividade: um estudo de Stanford mediu 13% a mais.",
+      claim: "um estudo de Stanford mediu 13% a mais",
       second: ["", "Só preguiçoso", " defende isso."],
+      notes: [
+        "Lado A sustenta a afirmação com um estudo citado e um número.",
+        "Lado B ataca as pessoas, não o argumento, e não traz evidência.",
+      ],
+      explanation: "Chamar o outro lado de preguiçoso não diz nada sobre produtividade. Uma resposta válida questionaria o estudo ou traria outros dados.",
       ask: "esse 13% é real?",
       answer: "Um experimento de Stanford (Bloom et al., 2015) mediu um ganho de 13%.",
       source: "Bloom et al., QJE 2015",
@@ -81,7 +86,18 @@ export const pt: Dictionary = {
       criteria: { label: "critérios na rubrica", hint: "lógica, evidência, réplica, clareza" },
       model: { label: "pontos dados pela IA", hint: "ela observa, o código faz a conta" },
     },
-    footer: "Um trabalho de disciplina da UFRJ, 2026.",
+    footer: {
+      project: "Projeto",
+      source: "Código no GitHub",
+      stack: "Stack",
+      licence: "Licença MIT",
+      author: "Autor",
+      github: "GitHub",
+      linkedin: "LinkedIn",
+      course: "Disciplina",
+      courseName: "EEL874 · Inteligência Artificial",
+      copyright: "© 2026",
+    },
     admin: "Admin",
   },
 
@@ -98,7 +114,6 @@ export const pt: Dictionary = {
     locked: "Criar uma sala exige a senha de admin: cada debate gasta a cota gratuita da Deb.",
     yours: "Sua sala",
     close: "Fechar sala",
-    chars: "caracteres por argumento",
   },
 
   notFound: {
@@ -165,7 +180,7 @@ export const pt: Dictionary = {
   },
 
   bot: {
-    called: (name) => `${name} chamou a Deb`,
+    called: "chamou a Deb",
     about: (name) => `sobre a mensagem de ${name}`,
     searching: "A Deb está cuidando disso",
     failed: "A Deb não conseguiu responder.",
@@ -211,9 +226,8 @@ export const pt: Dictionary = {
   panel: {
     ledger: "Extrato",
     ledgerEmpty: "Cada ponto ganho ou perdido aparece aqui, na hora.",
-    factCheck: "checagem",
-    manipulation: "manipulação",
-    averages: "Médias da rubrica",
+    argument: "argumento",
+    manipulation: "tentou manipular a juíza",
     challenges: "Desafios",
   },
 

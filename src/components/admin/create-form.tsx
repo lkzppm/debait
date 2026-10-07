@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, Minus, Plus, Square } from "lucide-react";
+import { AtSign, ExternalLink, Languages, Minus, Plus, Repeat, Square, Type } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useCallback, useEffect, useState } from "react";
 import { CubesBand } from "@/components/cubes/cubes-canvas";
@@ -12,10 +12,11 @@ import { useLocale } from "@/i18n/LocaleProvider";
 import { LOCALES, DICTIONARIES, type Locale } from "@/i18n";
 import { api, type ClientError } from "@/lib/api";
 import { DEFAULT_STRICTNESS } from "@/lib/debate/scoring";
-import { STRICTNESS_LEVELS, type Strictness } from "@/lib/debate/types";
+import type { Strictness } from "@/lib/debate/types";
 import type { RoomSummary } from "@/lib/rooms";
 import { useOrigin } from "@/lib/use-origin";
 import { cn } from "@/lib/utils";
+import { LevelPicker, LEVEL_FACE } from "./level-picker";
 import { FIELD } from "./login";
 
 /** The room this browser created and has not closed yet. */
@@ -60,6 +61,62 @@ function Stepper({ value, min, max, step = 1, onChange }: { value: number; min: 
       <button type="button" onClick={() => set(value + step)} disabled={value >= max} className={button} aria-label="+">
         <Plus className="size-4" />
       </button>
+    </div>
+  );
+}
+
+/** A transparent pixel: the QR code clears its middle for it, and Deb is drawn there instead. */
+const BLANK = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+const QR_SIZE = 168;
+
+/**
+ * The room's QR code in the side colours, blue fading into red, with Deb in
+ * the middle. It always sits on white: phone cameras read dark modules on a
+ * light ground far more reliably than the reverse, whatever the theme. The
+ * high error-correction level is what lets the middle be cleared for Deb.
+ */
+function RoomQr({ link }: { link: string }) {
+  return (
+    <div className="relative bg-white p-3">
+      <svg width="0" height="0" className="absolute" aria-hidden>
+        <defs>
+          <linearGradient id="room-qr-ink" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" style={{ stopColor: "var(--side-a-deep)" }} />
+            <stop offset="1" style={{ stopColor: "var(--side-b-deep)" }} />
+          </linearGradient>
+        </defs>
+      </svg>
+      {link ? (
+        <>
+          <QRCodeSVG
+            value={link}
+            size={QR_SIZE}
+            marginSize={0}
+            level="H"
+            fgColor="url(#room-qr-ink)"
+            bgColor="transparent"
+            imageSettings={{ src: BLANK, width: 40, height: 40, excavate: true }}
+          />
+          <span className="absolute inset-0 grid place-items-center" aria-hidden>
+            <Deb sides className="size-7" />
+          </span>
+        </>
+      ) : (
+        <div style={{ width: QR_SIZE, height: QR_SIZE }} />
+      )}
+    </div>
+  );
+}
+
+/** One fact of the room's format: an icon, the value, and what it is. */
+function Fact({ icon, value, label }: { icon: React.ReactNode; value: React.ReactNode; label: string }) {
+  return (
+    <div className="flex min-w-0 flex-col gap-2 bg-card p-3 sm:p-4">
+      <span className="flex items-center gap-2 text-side-a [&_svg:not([class*='size-'])]:size-4">
+        {icon}
+        <span className="truncate text-lg font-medium text-foreground tabular-nums">{value}</span>
+      </span>
+      <span className="eyebrow leading-snug text-muted-foreground">{label}</span>
     </div>
   );
 }
@@ -155,7 +212,7 @@ export function CreateForm({ onCreated }: { onCreated?: () => void }) {
           <div className="relative h-3">
             <CubesBand share={room.share} rows={1} />
           </div>
-          <div className="grid gap-6 p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:p-8">
+          <div className="grid gap-6 p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-8 sm:p-8">
             <div className="flex min-w-0 flex-col gap-5">
               <p className="eyebrow flex items-center gap-2 text-side-a">
                 <Deb sides className="size-4" />
@@ -175,15 +232,24 @@ export function CreateForm({ onCreated }: { onCreated?: () => void }) {
                   <p className="truncate text-sm text-muted-foreground">{room.names.b ?? t.lobby.open}</p>
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground">{t.lobby.format(room.format.rounds, room.format.challenges)}</p>
-              <p className="font-mono text-xs text-muted-foreground">
-                {t.admin.botLanguage}: {DICTIONARIES[room.locale].name} · {room.format.charLimit} {t.create.chars} · {t.admin.strictness}:{" "}
-                {t.strictness[room.format.strictness].name.toLowerCase()}
-              </p>
             </div>
-            <div className="flex flex-col items-center gap-3 sm:items-end">
-              <div className="bg-white p-3">{link ? <QRCodeSVG value={link} size={144} marginSize={0} /> : <div className="size-36" />}</div>
-              <code className="max-w-44 truncate font-mono text-xs text-muted-foreground">{link}</code>
+            <div className="mx-auto">
+              <RoomQr link={link} />
+            </div>
+          </div>
+
+          {/* The format, one fact per tile. */}
+          <div className="grid grid-cols-2 gap-px border-t border-border bg-border sm:grid-cols-5">
+            <Fact icon={<Repeat />} value={room.format.rounds} label={t.admin.rounds} />
+            <Fact icon={<AtSign />} value={room.format.challenges} label={t.admin.challenges} />
+            <Fact icon={<Type />} value={room.format.charLimit} label={t.admin.charLimit} />
+            <Fact icon={<Languages />} value={DICTIONARIES[room.locale].name} label={t.admin.botLanguage} />
+            <div className="col-span-2 bg-card sm:col-span-1">
+              <Fact
+                icon={<Deb mood={LEVEL_FACE[room.format.strictness]} sides className="size-5" />}
+                value={t.strictness[room.format.strictness].name}
+                label={t.admin.strictness}
+              />
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 border-t border-border px-4 py-4 sm:px-8">
@@ -233,16 +299,13 @@ export function CreateForm({ onCreated }: { onCreated?: () => void }) {
       <Field label={t.admin.charLimit} className="sm:col-span-2">
         <Stepper value={charLimit} min={200} max={1200} step={100} onChange={setCharLimit} />
       </Field>
-      <Field label={t.admin.strictness} className="sm:col-span-2">
-        <PillSwitch
-          label={t.admin.strictness}
-          size="md"
-          value={strictness}
-          onChange={setStrictness}
-          options={STRICTNESS_LEVELS.map((level) => ({ value: level, label: t.strictness[level].name }))}
-        />
+      <div className="block text-sm sm:col-span-2">
+        <span className="eyebrow text-muted-foreground">{t.admin.strictness}</span>
+        <div className="mt-1.5">
+          <LevelPicker value={strictness} onChange={setStrictness} />
+        </div>
         <p className="mt-2 text-sm text-muted-foreground">{t.strictness[strictness].hint}</p>
-      </Field>
+      </div>
       <div className="flex items-center gap-3 sm:col-span-2">
         <Pill type="submit" size="lg" disabled={busy || !motion.trim()}>
           <Plus />
