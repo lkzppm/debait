@@ -8,6 +8,7 @@ A chat room where two people debate a motion while Deb, an AI referee, scores ea
 
 ## Where things stand
 
+- Deployed on 2026-10-06: **https://debait-pi.vercel.app**, Upstash Redis and the Groq key configured; `main` is protected (pull request + green CI) and auto-deploys. Details and how it was done in `spec/05-stack-and-versions.md`.
 - The scaffold of the whole app was built on 2026-10-06. `spec/06-roadmap.md` has the table of what was run and what was not: in short, everything works on the **mock judge + memory store**; the **Groq engine, the Upstash driver and a deployment have never been run**.
 - Two features define the project and are cut last: the score computed and shown in real time with its math (the ledger), and the `@deb` mention.
 - Lucas is refining the interface and the agent logic himself. Do not redesign screens or prompts unasked.
