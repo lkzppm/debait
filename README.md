@@ -48,6 +48,8 @@ To use the real judge, copy `.env.example` to `.env.local` and fill in:
 | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis. Required on Vercel (serverless instances do not share memory); optional locally. |
 | `ADMIN_PASSWORD` | Password for `/create` and `/admin`. Required in production. |
 
+The project runs at https://debait-pi.vercel.app (production tracks `main`; every pull request gets a preview).
+
 Useful commands:
 
 ```bash
