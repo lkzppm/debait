@@ -48,16 +48,19 @@ Three states in one page.
 │ ☺ ╭ +62 = 78 − 16 [straw man −16] ▾ · one-line note ╮   ← Deb bubble │
 │                                 Bia · round 1                         │
 │                        ╭ message bubble ╮                             │
-│                  Deb bubble ╭ +71 · note ╮ ☺      "can be checked @deb"│
+│                  (↩) Deb bubble ╭ +71 · note ╮ ☺   ← arrow: ask Deb │
 │ Ana · called Deb                                                      │
 │ ╭ @deb is that true? ╶ about Bia's message ╮      ← dashed bubble     │
 │ ☺ ╭ FACT CHECK · FALSE · text · [1] source · −20 for Bia ╮           │
 ├───────────────────────────────────────────────────────────────────────┤
-│ composer: your turn (0/600)                 [☺ @deb] hint · 2 left [↑]│
+│ (fades out)                                                   (i) Deb │
+│ composer: your turn                                        0/600 [↑] │
 └───────────────────────────────────────────────────────────────────────┘
 ```
 
-Everything from Deb is a chat bubble of her own, under the message it answers and on the same side, with her face as the avatar (good, medium or bad by the points; stern on manipulation). A call to `@deb` is two bubbles on the caller's side: the request (dashed border, the handle highlighted) and the answer. The **ledger** ("Extrato", `room/score-panel.tsx`) groups the score changes by round, newest first, with each side's subtotal in the round's header; every line has an icon tile in the side's colour (Deb's verdict face for an argument, the ruling's icon for a fact check, a shield for manipulation), the name and what happened, and the points; the challenges left are `@` glyphs. It and the **result** are popups (`site/dialog.tsx`, Radix Dialog with a motion fade), opened from the top bar; the result opens by itself when the debate ends and again when the written ruling lands. The composer has no `@` button: the Deb pill on its left opens a popup that lists what a mention can do (check a claim, search, ask about the score, point at a message) with a "Call @deb" button that starts one.
+Everything from Deb is a chat bubble of her own, under the message it answers and on the same side, with her face as the avatar (good, medium or bad by the points; stern on manipulation). A call to `@deb` is two bubbles on the caller's side: the request (dashed border, the handle highlighted) and the answer. The **ledger** ("Extrato", `room/score-panel.tsx`) groups the score changes by round, newest first, with each side's subtotal in the round's header; every line has an icon tile in the side's colour (Deb's verdict face for an argument, the ruling's icon for a fact check, a shield for manipulation), the name and what happened, and the points; the challenges left are `@` glyphs. It and the **result** are popups (`site/dialog.tsx`, Radix Dialog with a motion fade); the result opens by itself when the debate ends and again when the written ruling lands. The composer has no `@` button.
+
+Chat pass (2026-10-07, Lucas: "too generic", "too polluted"): the ledger opens from a round floating button at the chat's top right, and Deb's help from an info button floating at its bottom right, over the composer; neither is in the top bar any more. The top bar shows Deb's level as her face for it (pleased, neutral, stern), not a text tag. The meter shows the names without the "Lado A / Lado B" label; the turn marker sits next to the name. The composer's field lights up in the writer's side colour (Deb's while it holds a mention) and shows only the character count. Under a message Deb can check, a curved reply arrow beside her bubble starts a call about it (it replaces the "can be checked @deb" pill). The help popup is a list of Deb's four tools on the left (check a claim, search, ask about the score, point at a message) and the chosen one on the right: its cost (one challenge or free), what it does, and an example that lands in the field when clicked; the challenges left and "Call @deb" sit at its foot. The fallacy explanation and the rubric unfold inside Deb's bubble with a spring, the rubric's cells lighting up in turn. The feed fades out at its top and bottom edges (`fade-y`) instead of being cut by the meter and the composer. Everything clickable shows the hand cursor (a base rule in `globals.css`; Tailwind v4 dropped it for buttons).
 
 Spectators (anyone who opens a full room) see the same page without the composer. **The projector view is just this**: open the room link on the laptop. Design the debate state so it reads from the back of a room at large zoom: the meter and the latest ledger entry must be the biggest things on screen.
 
@@ -86,10 +89,10 @@ Functional, not decorated. Password form; then a table of debates (motion, statu
 
 ## Calling the bot (differentiator 2)
 
-- One composer for both moves: text that contains `@deb` goes to the bot (any time), anything else is an argument (needs the turn). An `@` button next to the field inserts the mention; the `@deb` chip under a check-worthy message starts a call about that message. An autocomplete on typing `@`, and a reply action on every message, are not built.
+- One composer for both moves: text that contains `@deb` goes to the bot (any time), anything else is an argument (needs the turn). The help popup's "Call @deb" and its examples insert the mention; the reply arrow beside Deb's bubble under a check-worthy message starts a call about that message. An autocomplete on typing `@`, and a reply action on every message, are not built.
 - The mention appears in the chat as the debater's message with the reply target shown; right below, the bot's card starts as "searching…" and resolves to: the status for a validation (confirmed / imprecise / false / unverifiable), a short explanation, sources as links, and the score effect if any.
-- Remaining challenges show as dots near the composer; when none are left the mention still works for `explain`.
-- Claims the judge marked check-worthy carry a subtle "can be challenged" hint, teaching the feature without a tutorial.
+- Remaining challenges show as `@` glyphs in the help popup and the ledger; when none are left the mention still works for `explain`.
+- Claims the judge marked check-worthy carry the reply arrow beside Deb's bubble, teaching the feature without a tutorial.
 
 ## Palette and themes (tokens in `src/app/globals.css`)
 
@@ -110,7 +113,7 @@ Two themes (Lucas, 2026-10-06): **paper** (`:root`) and **night** (`.dark` on `<
 - Components use the tokens (`bg-card`, `text-side-a`, `var(--side-a)`), never a hex value, so both themes follow.
 - The cubes shader reads `--side-a`, `--side-b`, `--background` and `--foreground` at runtime and parses them as 6-digit hex: keep those four in that form.
 - A side colour never means "good" or "bad": a confirmed fact-check is a neutral tag with a check mark, flags are magenta, and "live" in the admin table is the accent blue.
-- Never encode a side by colour alone: always pair it with the name, the "Lado A / Lado B" label and the left/right position.
+- Never encode a side by colour alone: always pair it with the name and the left/right position (the room dropped the "Lado A / Lado B" label on 2026-10-07; the lobby and `/create` keep it).
 - `src/app/icon.svg` (the favicon) repeats Deb's idle face with the night values as fixed hex: regenerate it when the palette changes.
 
 ## vgpu: the cubes (`src/components/cubes/`)

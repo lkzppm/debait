@@ -151,6 +151,24 @@
     background: var(--side-a);
     color: var(--ink);
   }
+  /* Tailwind v4 leaves buttons with the arrow cursor; everything clickable here gets the hand. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="radio"],
+  [role="tab"],
+  [role="switch"],
+  [role="option"],
+  [role="menuitem"],
+  summary,
+  select,
+  label:has(input:not(:disabled)) {
+    cursor: pointer;
+  }
+}
+
+/* The generated select (`ui/select.tsx`, not hand-edited) sets cursor-default on its options; unlayered, this wins. */
+[data-slot="select-item"]:not([data-disabled]) {
+  cursor: pointer;
 }
 
 /* A card over the grid: flat, square, hairline border. */
@@ -174,6 +192,19 @@
   &::-webkit-scrollbar {
     display: none;
   }
+}
+
+/* A scrolling area whose content fades out at the top and bottom edges instead of being cut. */
+@utility fade-y {
+  --fade-top: 1.5rem;
+  --fade-bottom: 2.5rem;
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    #000 var(--fade-top),
+    #000 calc(100% - var(--fade-bottom)),
+    transparent
+  );
 }
 
 /* Small capitals above a title: "THE PROBLEM", "01 — LIVE SCORE". */
