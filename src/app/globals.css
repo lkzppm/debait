@@ -155,6 +155,16 @@
   border: 1px solid var(--border);
 }
 
+/* The top bar's height: two rows on a phone, one from `sm` up (`site/nav.tsx`). */
+:root {
+  --nav-h: 6.5rem;
+}
+@media (width >= 40rem) {
+  :root {
+    --nav-h: 3.5rem;
+  }
+}
+
 @utility scrollbar-none {
   scrollbar-width: none;
   &::-webkit-scrollbar {
@@ -274,7 +284,7 @@
 /* Deb on the landing page: a face of cubes. Each lit cell is a small block
    with a lit top-left edge and a shaded bottom-right one. */
 .hero-mark {
-  --mark-cell: clamp(20px, 2.5vw, 30px);
+  --mark-cell: clamp(16px, 2.5vw, 30px);
   animation:
     rise 0.7s var(--ease-expo) backwards,
     float 7s ease-in-out 0.7s infinite;
@@ -296,11 +306,13 @@
     inset 2px 2px 0 rgb(255 255 255 / 0.22),
     inset -2px -2px 0 rgb(0 0 0 / 0.2);
 }
-.hero-mark-cell[data-state="body"]:hover {
-  position: relative;
-  z-index: 1;
-  scale: 1.18;
-  filter: brightness(1.15);
+@media (hover: hover) {
+  .hero-mark-cell[data-state="body"]:hover {
+    position: relative;
+    z-index: 1;
+    scale: 1.18;
+    filter: brightness(1.15);
+  }
 }
 @keyframes cell-in {
   from {

@@ -199,7 +199,7 @@ export function MessageItem({ message, name, canAct, onAsk, onRetry }: MessageIt
                       onClick={() => toggle(index)}
                       aria-expanded={openPenalty === index}
                       className={cn(
-                        "inline-flex items-center gap-1.5 border border-destructive/50 bg-background px-2 py-0.5 text-xs text-destructive transition-colors hover:bg-destructive/15",
+                        "inline-flex items-center gap-1.5 border border-destructive/50 bg-background px-2 py-1 text-xs text-destructive transition-colors hover:bg-destructive/15",
                         TILTS[index % TILTS.length],
                         openPenalty === index && "bg-destructive/15",
                       )}
@@ -223,7 +223,7 @@ export function MessageItem({ message, name, canAct, onAsk, onRetry }: MessageIt
                     aria-expanded={showRubric}
                     aria-label={t.feed.rubric}
                     title={t.feed.rubric}
-                    className="grid size-6 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+                    className="grid size-7 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
                   >
                     <ChevronDown className={cn("size-3.5 transition-transform", showRubric && "rotate-180")} />
                   </button>
@@ -282,7 +282,7 @@ export function MessageItem({ message, name, canAct, onAsk, onRetry }: MessageIt
               <button
                 type="button"
                 onClick={() => onAsk(message.id)}
-                className="inline-flex items-center gap-0.5 rounded-full border border-side-a/60 px-2.5 py-0.5 text-side-a hover:bg-side-a/15"
+                className="inline-flex items-center gap-0.5 rounded-full border border-side-a/60 px-2.5 py-1 text-side-a hover:bg-side-a/15"
               >
                 <AtSign className="size-3" />
                 {BRAND.bot.handle}

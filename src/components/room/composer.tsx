@@ -77,7 +77,7 @@ export function Composer({ meta, state, identity, names, text, onText, replyTo, 
   const accent = seat === "a" ? "border-l-side-a" : "border-l-side-b";
 
   return (
-    <div className={cn("border border-l-2 border-border bg-card p-3", isMention ? "border-l-bot" : accent)}>
+    <div className={cn("border border-l-2 border-border bg-card p-2.5 sm:p-3", isMention ? "border-l-bot" : accent)}>
       {target && (
         <div className="mb-2 flex items-center gap-2 bg-accent px-3 py-1.5 font-mono text-xs text-muted-foreground">
           <AtSign className="size-3.5 shrink-0 text-side-a" />
@@ -111,7 +111,7 @@ export function Composer({ meta, state, identity, names, text, onText, replyTo, 
           // 16px on phones: iOS Safari zooms the page when a smaller field takes focus.
           className={cn(
             "max-h-40 min-h-[3.5rem] flex-1 resize-none border bg-background px-3 py-2.5 text-base outline-none placeholder:text-muted-foreground/70",
-            isMention ? "border-bot/50 font-mono text-[15px]" : "border-input focus-visible:border-side-a",
+            isMention ? "border-bot/50 font-mono sm:text-[15px]" : "border-input focus-visible:border-side-a",
           )}
         />
         <Pill

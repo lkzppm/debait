@@ -134,7 +134,7 @@ export function Demo() {
 
   return (
     <figure aria-label={d.title}>
-      <div className="grid gap-x-12 gap-y-10 lg:grid-cols-2">
+      <div className="grid gap-x-12 gap-y-8 sm:gap-y-10 lg:grid-cols-2">
         <Piece label={d.chat} className="lg:row-span-2">
           <div className="flex flex-col gap-3">
             <Appear shown className="w-[92%] border border-l-2 border-border border-l-side-a bg-card p-4">
@@ -245,10 +245,10 @@ export function Demo() {
           <div className="flex items-end justify-between gap-4">
             <p className="flex items-baseline gap-3">
               <span className="mark-a text-xs">{NAMES.a}</span>
-              <span className="text-5xl leading-none font-medium tracking-tighter tabular-nums">{percent}%</span>
+              <span className="text-4xl leading-none font-medium tracking-tighter tabular-nums sm:text-5xl">{percent}%</span>
             </p>
             <p className="flex items-baseline gap-3">
-              <span className="text-5xl leading-none font-medium tracking-tighter tabular-nums">{100 - percent}%</span>
+              <span className="text-4xl leading-none font-medium tracking-tighter tabular-nums sm:text-5xl">{100 - percent}%</span>
               <span className="mark-b text-xs">{NAMES.b}</span>
             </p>
           </div>

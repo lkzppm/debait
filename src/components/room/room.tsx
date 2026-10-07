@@ -112,9 +112,10 @@ export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
         intensity={0.2}
       />
 
-      <div className="relative z-10 mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col gap-3 p-3 sm:p-4">
-        <header className="flex h-14 shrink-0 items-center gap-4 border border-border bg-popover/95 px-4">
-          <Logo label={t.common.home} className="text-xl sm:text-2xl" />
+      <div className="relative z-10 mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col gap-2 p-2 sm:gap-3 sm:p-4">
+        {/* On a phone the bar keeps Deb, the motion and the two popup buttons; the rest returns from sm up. */}
+        <header className="flex h-12 shrink-0 items-center gap-2 border border-border bg-popover/95 px-3 sm:h-14 sm:gap-4 sm:px-4">
+          <Logo label={t.common.home} short className="text-xl sm:text-2xl" />
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-sm sm:text-base" title={meta.motion}>
               {meta.motion}
@@ -150,7 +151,7 @@ export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
             </Pill>
           )}
           <LocaleSwitch />
-          <ThemeSwitch />
+          <ThemeSwitch className="hidden sm:grid" />
         </header>
 
         {connection === "gone" && events.length === 0 ? (

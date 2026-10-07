@@ -60,7 +60,7 @@ Everything from Deb is a chat bubble of her own, under the message it answers an
 
 Spectators (anyone who opens a full room) see the same page without the composer. **The projector view is just this**: open the room link on the laptop. Design the debate state so it reads from the back of a room at large zoom: the meter and the latest ledger entry must be the biggest things on screen.
 
-The layout is one column at every size (the ledger is a popup); the room must work on two phones, that is the main use. Carry over CV-AI's mobile lessons (`../CV-AI/spec/03-ui-design.md`, "Layout em telas pequenas"): 16px inputs so iOS Safari does not zoom, `interactiveWidget: "resizes-content"`, no full-screen `backdrop-filter` over the animated background on phones.
+The layout is one column at every size (the ledger is a popup); the room must work on two phones, that is the main use. Phone pass (2026-10-06, `feat/mobile`): the top bar is two rows under `sm` (logo and controls, then the two doors as equal tabs) and pages size themselves with `--nav-h`; the room bar keeps only Deb, the motion, the ledger and result buttons and the language switch; the meter's numbers drop to `text-3xl`; popups become bottom sheets; the join field and the mention mode stay at 16px so iOS does not zoom; `backdrop-filter` is only applied from `sm` up (the cubes run behind everything). Carry over CV-AI's mobile lessons (`../CV-AI/spec/03-ui-design.md`, "Layout em telas pequenas"): 16px inputs so iOS Safari does not zoom, `interactiveWidget: "resizes-content"`, no full-screen `backdrop-filter` over the animated background on phones.
 
 ### Join `/join` and Create `/create`
 

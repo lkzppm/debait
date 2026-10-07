@@ -155,14 +155,14 @@ export function CreateForm({ onCreated }: { onCreated?: () => void }) {
           <div className="relative h-3">
             <CubesBand share={room.share} rows={1} />
           </div>
-          <div className="grid gap-6 p-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:p-8">
+          <div className="grid gap-6 p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:p-8">
             <div className="flex min-w-0 flex-col gap-5">
               <p className="eyebrow flex items-center gap-2 text-side-a">
                 <Deb sides className="size-4" />
                 {t.create.yours} · {t.roomStatus[room.status]}
               </p>
-              <p className="font-mono text-4xl font-semibold tracking-[0.3em] uppercase">{room.id}</p>
-              <p className="text-2xl font-medium tracking-tight text-balance">{room.motion}</p>
+              <p className="font-mono text-3xl font-semibold tracking-[0.3em] uppercase sm:text-4xl">{room.id}</p>
+              <p className="text-xl font-medium tracking-tight text-balance sm:text-2xl">{room.motion}</p>
               <div className="grid grid-cols-2 gap-2">
                 <div className="border border-t-2 border-border border-t-side-a p-3">
                   <p className="eyebrow text-side-a">{t.meter.side("A")}</p>
@@ -186,7 +186,7 @@ export function CreateForm({ onCreated }: { onCreated?: () => void }) {
               <code className="max-w-44 truncate font-mono text-xs text-muted-foreground">{link}</code>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2 border-t border-border px-6 py-4 sm:px-8">
+          <div className="flex flex-wrap items-center gap-2 border-t border-border px-4 py-4 sm:px-8">
             <CopyButton value={link} label={t.admin.copyLink} />
             <Pill asChild variant="outline" size="sm">
               <a href={`/r/${room.id}`} target="_blank" rel="noreferrer">

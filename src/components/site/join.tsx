@@ -39,18 +39,18 @@ export function Join() {
   const complete = code.length === LENGTH;
 
   return (
-    <main className="mx-auto grid min-h-[calc(100dvh-3.5rem)] w-full max-w-6xl content-center gap-12 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-center">
+    <main className="mx-auto grid min-h-[calc(100dvh-var(--nav-h))] w-full max-w-6xl content-center gap-8 px-4 py-8 sm:gap-12 sm:px-6 sm:py-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-center">
       <header className="flex flex-col gap-4">
         <Deb mood="busy" sides className="size-10" />
         <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">{t.join.title}</h1>
-        <p className="max-w-md text-lg text-muted-foreground">{t.join.lead}</p>
+        <p className="max-w-md text-base text-muted-foreground sm:text-lg">{t.join.lead}</p>
       </header>
 
       <form onSubmit={enter} noValidate className="relative overflow-hidden border border-border bg-card">
         <div className="relative h-3">
           <CubesBand share={0.5} rows={1} intensity={0.8} />
         </div>
-        <div className="flex flex-col gap-6 p-6 sm:p-8">
+        <div className="flex flex-col gap-5 p-4 sm:gap-6 sm:p-8">
           <label htmlFor="room-code" className="eyebrow text-muted-foreground">
             {t.join.codeLabel}
           </label>
@@ -66,7 +66,7 @@ export function Join() {
                   <div
                     key={index}
                     className={cn(
-                      "grid aspect-square place-items-center border-2 font-mono text-3xl font-medium uppercase transition-[background-color,border-color,scale] duration-200 sm:text-4xl",
+                      "grid aspect-square place-items-center border-2 font-mono text-2xl font-medium uppercase transition-[background-color,border-color,scale] duration-200 sm:text-4xl",
                       sideA ? "border-side-a/40" : "border-side-b/40",
                       letter && (sideA ? "scale-105 border-side-a bg-side-a text-ink" : "scale-105 border-side-b bg-side-b text-ink"),
                       next && (sideA ? "border-side-a" : "border-side-b"),
@@ -95,7 +95,8 @@ export function Join() {
               autoFocus
               spellCheck={false}
               maxLength={LENGTH}
-              className="absolute inset-0 cursor-text opacity-0"
+              // 16px: iOS Safari zooms into a smaller field when it takes focus, invisible or not.
+              className="absolute inset-0 cursor-text text-base opacity-0"
             />
           </div>
 
