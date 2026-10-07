@@ -1,12 +1,12 @@
 "use client";
 
-import { Trophy } from "lucide-react";
 import { motion } from "motion/react";
+import { CubesBand } from "@/components/cubes/cubes-canvas";
+import { Tag } from "@/components/site/pill";
 import { useT } from "@/i18n/LocaleProvider";
-import { BRAND } from "@/lib/brand";
 import { SEATS, type DebateState, type Seat } from "@/lib/debate/types";
 import { cn } from "@/lib/utils";
-import { sideText } from "./message-item";
+import { sideMark, sideText } from "./message-item";
 
 /** The end of the debate: who argued better by the numbers, and the bot's written ruling. */
 export function Result({ state, names }: { state: DebateState; names: Record<Seat, string> }) {
@@ -15,68 +15,81 @@ export function Result({ state, names }: { state: DebateState; names: Record<Sea
 
   return (
     <motion.section
-      initial={{ opacity: 0, y: 16, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 220, damping: 24 }}
-      className="mx-auto w-full max-w-2xl rounded-3xl border border-bot/25 bg-popover/95 p-5 sm:p-6"
+      className={cn(
+        "mx-auto w-full max-w-3xl border bg-card",
+        winner === "a" ? "border-side-a/70" : winner === "b" ? "border-side-b/70" : "border-border",
+      )}
     >
-      <p className="text-xs font-medium tracking-wider text-muted-foreground uppercase">{t.result.title}</p>
+      <div className="p-6 sm:p-8">
+        <p className="eyebrow text-side-a">{t.result.title}</p>
 
-      <h2 className={cn("mt-1 flex items-center gap-2 text-2xl font-semibold sm:text-3xl", winner && winner !== "draw" && sideText(winner))}>
-        {winner && winner !== "draw" && <Trophy className="size-6" />}
-        {winner === null ? t.result.noScore : winner === "draw" ? t.result.draw : t.result.wins(names[winner])}
-      </h2>
-
-      {state.finishedReason === "stopped" && <p className="mt-1 text-sm text-muted-foreground">{t.result.stopped}</p>}
-
-      {winner !== null && (
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          {SEATS.map((seat) => (
-            <div key={seat} className="rounded-xl border border-border bg-card/60 p-3">
-              <p className="truncate text-sm text-muted-foreground">{names[seat]}</p>
-              <p className={cn("font-mono text-2xl font-semibold tabular-nums", sideText(seat))}>
-                {t.feed.points(state.totals[seat])}
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {ruling && (
-        <div className="mt-5 flex flex-col gap-4 text-[15px] leading-relaxed">
-          <div>
-            <p className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
-              {t.result.ruling}
-              {state.mock && <span className="ml-2 rounded border border-border px-1 text-[10px]">{t.common.mock}</span>}
-            </p>
-            <p className="mt-1 whitespace-pre-wrap">{ruling.text}</p>
-          </div>
-
-          {SEATS.map((seat) =>
-            ruling.best[seat] || ruling.advice[seat] ? (
-              <div key={seat} className="rounded-xl border border-border p-3">
-                <p className={cn("text-sm font-medium", sideText(seat))}>{names[seat]}</p>
-                {ruling.best[seat] && (
-                  <>
-                    <p className="mt-2 text-xs text-muted-foreground">{t.result.best}</p>
-                    <blockquote className="border-l-2 border-border pl-3 text-sm italic">{ruling.best[seat]}</blockquote>
-                  </>
-                )}
-                {ruling.advice[seat] && (
-                  <>
-                    <p className="mt-2 text-xs text-muted-foreground">{t.result.advice}</p>
-                    <p className="text-sm">{ruling.advice[seat]}</p>
-                  </>
-                )}
-              </div>
-            ) : null,
+        <h2 className="mt-4 text-4xl leading-tight font-medium tracking-tight sm:text-6xl">
+          {winner === null ? (
+            t.result.noScore
+          ) : winner === "draw" ? (
+            t.result.draw
+          ) : (
+            <span className={sideMark(winner)}>{t.result.wins(names[winner])}</span>
           )}
+        </h2>
+
+        {state.finishedReason === "stopped" && <p className="mt-3 text-muted-foreground">{t.result.stopped}</p>}
+
+        {winner !== null && (
+          <div className="mt-8 grid grid-cols-2 gap-px border border-border bg-border">
+            {SEATS.map((seat) => (
+              <div key={seat} className="bg-card p-4">
+                <p className={cn("eyebrow", sideText(seat))}>{names[seat]}</p>
+                <p className="mt-1 font-mono text-2xl tabular-nums sm:text-3xl">{t.feed.points(state.totals[seat])}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {ruling && (
+          <div className="mt-8 flex flex-col gap-6">
+            <div>
+              <p className="eyebrow flex items-center gap-2 text-muted-foreground">
+                {t.result.ruling}
+                {state.mock && <Tag>{t.common.mock}</Tag>}
+              </p>
+              <p className="mt-2 text-lg leading-relaxed whitespace-pre-wrap">{ruling.text}</p>
+            </div>
+
+            {SEATS.map((seat) =>
+              ruling.best[seat] || ruling.advice[seat] ? (
+                <div key={seat} className={cn("border-l-2 pl-4", seat === "a" ? "border-side-a" : "border-side-b")}>
+                  <p className={cn("eyebrow", sideText(seat))}>{names[seat]}</p>
+                  {ruling.best[seat] && (
+                    <>
+                      <p className="eyebrow mt-3 text-muted-foreground">{t.result.best}</p>
+                      <blockquote className="mt-1 italic">{ruling.best[seat]}</blockquote>
+                    </>
+                  )}
+                  {ruling.advice[seat] && (
+                    <>
+                      <p className="eyebrow mt-3 text-muted-foreground">{t.result.advice}</p>
+                      <p className="mt-1">{ruling.advice[seat]}</p>
+                    </>
+                  )}
+                </div>
+              ) : null,
+            )}
+          </div>
+        )}
+
+        <p className="mt-8 text-sm text-muted-foreground">{t.result.disclaimer}</p>
+      </div>
+
+      {/* The final split, as a mosaic along the bottom of the card. */}
+      {winner !== null && (
+        <div className="relative h-20 border-t border-border">
+          <CubesBand share={state.share} rows={4} />
         </div>
       )}
-
-      <p className="mt-5 text-xs text-muted-foreground">
-        {t.result.disclaimer} <span className="text-bot">{BRAND.bot.name}</span>
-      </p>
     </motion.section>
   );
 }

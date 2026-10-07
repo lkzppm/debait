@@ -11,6 +11,9 @@ export const en = {
 
   common: {
     language: "Language",
+    pages: "Pages",
+    themeLight: "Switch to the light theme",
+    themeDark: "Switch to the dark theme",
     source: "Source on GitHub",
     copy: "Copy",
     copied: "Copied",
@@ -42,28 +45,55 @@ export const en = {
   },
 
   home: {
-    tagline: "Debate. Don't take the bait.",
-    lead: "Two sides, one live score. Deb, the AI referee, scores every argument as it lands, shows the math, and checks the facts when you call her.",
-    codeLabel: "Room code",
-    codePlaceholder: "6 letters",
-    enter: "Enter the room",
-    invalid: "A room code has 6 letters.",
-    features: [
-      {
-        title: "A score you can audit",
-        body: "Every message gets its points within seconds, with the formula on screen: what the rubric gave, what each fallacy cost, and the exact words that caused it.",
+    brief: "A debate room with an AI referee. Deb scores every argument as it lands, shows the math, and checks the facts when you call @deb.",
+    poke: "Deb, the referee. Poke her to see a flag.",
+    create: "Create a room",
+    join: "Enter a room",
+    discover: "How it works",
+    demo: {
+      title: "One debate, step by step",
+      chat: "Chat",
+      score: "Score",
+      meter: "Meter",
+      first: "Remote work raises productivity: a Stanford study measured 13% more.",
+      // Before, flagged excerpt, after.
+      second: ["", "Only lazy people", " defend that."],
+      ask: "is that 13% real?",
+      answer: "A Stanford experiment (Bloom et al., 2015) measured a 13% gain.",
+      source: "Bloom et al., QJE 2015",
+      steps: {
+        argue: (name: string) => `${name} argues.`,
+        scored: (points: number) => `Deb scores it: the rubric gives ${points}.`,
+        attack: (name: string) => `${name} attacks the person, not the idea.`,
+        flagged: (fallacy: string, cost: number) => `Deb flags it. ${fallacy} costs ${cost} points.`,
+        call: (name: string) => `${name} doubts the number and calls @deb.`,
+        checked: (delta: number, name: string) => `Deb searches the web. Confirmed: +${delta} for ${name}.`,
       },
-      {
-        title: "Call @deb",
-        body: "Doubt a claim? Mention the bot in the chat. She searches the web, answers with sources, and the score of whoever made the claim moves.",
-      },
-      {
-        title: "Better argued, not right",
-        body: "The meter shows who is arguing better, not who is right. Deb judges the form of the argument and never picks a side.",
-      },
-    ],
+      note: "The meter shows who is arguing better, not who is right.",
+    },
+    facts: {
+      fallacies: { label: "fallacies Deb flags", hint: "each one quoted" },
+      criteria: { label: "rubric criteria", hint: "logic, evidence, rebuttal, clarity" },
+      model: { label: "points given by the AI", hint: "it observes, the code scores" },
+    },
     footer: "A UFRJ course project, 2026.",
     admin: "Admin",
+  },
+
+  join: {
+    title: "Enter a room",
+    lead: "Type the code of a room someone created. A link to the room works too.",
+    codeLabel: "Room code",
+    enter: "Enter",
+    hint: "Six letters, as shown by whoever created the room. Paste works too.",
+    invalid: "A room code has 6 letters.",
+  },
+
+  create: {
+    locked: "Creating a room needs the admin password: every debate spends Deb's free quota.",
+    yours: "Your room",
+    close: "Close room",
+    chars: "characters per argument",
   },
 
   notFound: {
@@ -85,7 +115,6 @@ export const en = {
       gone: "Disconnected",
     },
     mockBanner: "Demo judge: there is no Groq API key, so these scores come from a mock.",
-    tabs: { debate: "Debate", score: "Score" },
   },
 
   lobby: {
@@ -106,6 +135,7 @@ export const en = {
 
   meter: {
     label: (a: number, b: number) => `Meter: ${a}% against ${b}%`,
+    side: (letter: string) => `Side ${letter}`,
     provisional: "provisional",
     provisionalHint: "The round is not over, or a judgement is still pending.",
     timeline: "The meter over time",
@@ -146,6 +176,7 @@ export const en = {
       off_topic: "Off topic",
     },
     charged: "Used one challenge",
+    state: { working: "working", done: "done", failed: "failed" },
   },
 
   composer: {

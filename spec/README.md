@@ -8,7 +8,7 @@ Short, stable documents so any session (human or Claude Code) can pick up the wo
 | [01-market-research.md](01-market-research.md) | Web research of 2026-10-06: competitors, evidence, verdict, how we differ, sources |
 | [02-architecture.md](02-architecture.md) | As built: stack, storage drivers, event log and ledger, request flows, SSE, admin panel, languages, folder tree, decisions |
 | [03-judge.md](03-judge.md) | The AI core: judgement schema, scoring math, fallacies, the `@bot` mention, anti-manipulation, free-tier budget |
-| [04-ui-design.md](04-ui-design.md) | Screens, the live ledger, the mention UI, palette, the vgpu "arena" shader, motion |
+| [04-ui-design.md](04-ui-design.md) | The visual direction (after cognee.ai), screens, the live ledger, the mention UI, palette, the vgpu cubes, motion |
 | [05-stack-and-versions.md](05-stack-and-versions.md) | Versions, env vars, commands, lessons inherited from CV-AI |
 | [06-roadmap.md](06-roadmap.md) | Status, name candidates, the day-by-day plan to Friday 2026-10-09, risks |
 

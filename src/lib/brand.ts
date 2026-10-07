@@ -1,6 +1,7 @@
 /**
  * Names live here and nowhere else, so renaming the project or the bot is a
- * one-file change. The wordmark highlights the "AI" inside "debait".
+ * one-file change. The wordmark colours the "AI" inside "debait": the a in
+ * side A's colour, the i in side B's.
  */
 export const BRAND = {
   name: "Debait",
@@ -19,10 +20,3 @@ export const MENTION = `@${BRAND.bot.handle}`;
 export function mentionsBot(text: string): boolean {
   return new RegExp(`(^|\\s)@${BRAND.bot.handle}\\b`, "i").test(text);
 }
-
-/**
- * The two sides. Deliberately not red vs blue or green/yellow vs red, which
- * read as political parties in Brazil; cyan and orange also differ in
- * lightness, so they survive colour blindness.
- */
-export const SIDE_COLORS = { a: "#38BDF8", b: "#FB923C" } as const;
