@@ -72,6 +72,7 @@ export async function runJudgement(roomId: string, messageId: string): Promise<v
       locale: room.locale,
       motion: room.motion,
       stances: room.stances,
+      strictness: room.format.strictness,
       seat: message.seat,
       round: message.round,
       isOpening: message.isOpening,

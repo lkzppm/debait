@@ -36,31 +36,31 @@ Laid out like GraphMan's (`../GraphMan/web/src/components/Hero.tsx`), with as fe
 Three states in one page.
 
 - **Lobby**: the motion, a name field, the two sides with a join button each, a share block (room code, link, QR code). The debate starts as soon as both seats are taken (a countdown is not built).
-- **Debate**:
+- **Debate** (as built 2026-10-06, Lucas's pass of the same evening):
 
 ```
-┌ motion ──────────────────────────────── round 2/3 · Ana's turn ┐
-│ Ana (for)  54% ██████████████▓░░░░░░░░░░░ 46%  Bia (against)   │
-│            ▁▂▃▅▄▅▆  meter timeline                             │
-├────────────────────────────────────────────────┬───────────────┤
-│ [A] message bubble, flagged excerpt underlined │ Ledger (live) │
-│     ⚖ 62 = 78 − 16 (straw man) · one-line note │ +62 Ana  r2   │
-│                     message bubble [B]         │ −20 Bia  VAR  │
-│     ⚖ 71 = 71 · note · "can be challenged"     │ +71 Bia  r1   │
-│ [A] @bot is that true?  ↳ replying to Bia      │ +58 Ana  r1   │
-│     ⚖ bot: False. … sources ▸   −20 to Bia     │───────────────│
-│                                                │ Rubric avg    │
-│                                                │ Challenges ●●○│
-├────────────────────────────────────────────────┴───────────────┤
-│ composer: your turn (0/600) · "@" opens the bot mention         │
-└─────────────────────────────────────────────────────────────────┘
+┌ motion ─── round 2/3 · live ─── [Balanced] [Result] [Ledger 4] PT/EN ☀ ┐
+│ Ana (for)  54% ██████████████▓░░░░░░░░░░░ 46%  Bia (against)          │
+├───────────────────────────────────────────────────────────────────────┤
+│ Ana · round 1                                                         │
+│ ╭ message bubble, flagged excerpt underlined ╮                        │
+│ ☺ ╭ +62 = 78 − 16 [straw man −16] ▾ · one-line note ╮   ← Deb bubble │
+│                                 Bia · round 1                         │
+│                        ╭ message bubble ╮                             │
+│                  Deb bubble ╭ +71 · note ╮ ☺      "can be checked @deb"│
+│ Ana · called Deb                                                      │
+│ ╭ @deb is that true? ╶ about Bia's message ╮      ← dashed bubble     │
+│ ☺ ╭ FACT CHECK · FALSE · text · [1] source · −20 for Bia ╮           │
+├───────────────────────────────────────────────────────────────────────┤
+│ composer: your turn (0/600)                 [☺ @deb] hint · 2 left [↑]│
+└───────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Result**: the meter settles; winner or draw; the full ledger; the bot's short ruling; fallacy and validation tally.
+Everything from Deb is a chat bubble of her own, under the message it answers and on the same side, with her face as the avatar (good, medium or bad by the points; stern on manipulation). A call to `@deb` is two bubbles on the caller's side: the request (dashed border, the handle highlighted) and the answer. The **ledger** ("Extrato") and the **result** are popups (`site/dialog.tsx`, Radix Dialog with a motion fade), opened from the top bar; the result opens by itself when the debate ends and again when the written ruling lands. The composer has no `@` button: the Deb pill on its left opens a popup that lists what a mention can do (check a claim, search, ask about the score, point at a message) with a "Call @deb" button that starts one.
 
 Spectators (anyone who opens a full room) see the same page without the composer. **The projector view is just this**: open the room link on the laptop. Design the debate state so it reads from the back of a room at large zoom: the meter and the latest ledger entry must be the biggest things on screen.
 
-Below `lg` the score panel becomes a second tab (Debate / Score) and the layout is one column; the room must work on two phones, that is the main use. Carry over CV-AI's mobile lessons (`../CV-AI/spec/03-ui-design.md`, "Layout em telas pequenas"): 16px inputs so iOS Safari does not zoom, `interactiveWidget: "resizes-content"`, no full-screen `backdrop-filter` over the animated background on phones.
+The layout is one column at every size (the ledger is a popup); the room must work on two phones, that is the main use. Carry over CV-AI's mobile lessons (`../CV-AI/spec/03-ui-design.md`, "Layout em telas pequenas"): 16px inputs so iOS Safari does not zoom, `interactiveWidget: "resizes-content"`, no full-screen `backdrop-filter` over the animated background on phones.
 
 ### Join `/join` and Create `/create`
 

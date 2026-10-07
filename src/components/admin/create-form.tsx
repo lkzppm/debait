@@ -11,6 +11,8 @@ import { PillSwitch } from "@/components/site/pill-switch";
 import { useLocale } from "@/i18n/LocaleProvider";
 import { LOCALES, DICTIONARIES, type Locale } from "@/i18n";
 import { api, type ClientError } from "@/lib/api";
+import { DEFAULT_STRICTNESS } from "@/lib/debate/scoring";
+import { STRICTNESS_LEVELS, type Strictness } from "@/lib/debate/types";
 import type { RoomSummary } from "@/lib/rooms";
 import { useOrigin } from "@/lib/use-origin";
 import { cn } from "@/lib/utils";
@@ -79,6 +81,7 @@ export function CreateForm({ onCreated }: { onCreated?: () => void }) {
   const [rounds, setRounds] = useState(3);
   const [challenges, setChallenges] = useState(3);
   const [charLimit, setCharLimit] = useState(600);
+  const [strictness, setStrictness] = useState<Strictness>(DEFAULT_STRICTNESS);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<ClientError | null>(null);
   // Null while the stored room is being looked up, so the form does not flash first.
@@ -118,6 +121,7 @@ export function CreateForm({ onCreated }: { onCreated?: () => void }) {
         rounds,
         challenges,
         charLimit,
+        strictness,
       },
     });
     setBusy(false);
@@ -173,7 +177,8 @@ export function CreateForm({ onCreated }: { onCreated?: () => void }) {
               </div>
               <p className="text-sm text-muted-foreground">{t.lobby.format(room.format.rounds, room.format.challenges)}</p>
               <p className="font-mono text-xs text-muted-foreground">
-                {t.admin.botLanguage}: {DICTIONARIES[room.locale].name} · {room.format.charLimit} {t.create.chars}
+                {t.admin.botLanguage}: {DICTIONARIES[room.locale].name} · {room.format.charLimit} {t.create.chars} · {t.admin.strictness}:{" "}
+                {t.strictness[room.format.strictness].name.toLowerCase()}
               </p>
             </div>
             <div className="flex flex-col items-center gap-3 sm:items-end">
@@ -227,6 +232,16 @@ export function CreateForm({ onCreated }: { onCreated?: () => void }) {
       </Field>
       <Field label={t.admin.charLimit} className="sm:col-span-2">
         <Stepper value={charLimit} min={200} max={1200} step={100} onChange={setCharLimit} />
+      </Field>
+      <Field label={t.admin.strictness} className="sm:col-span-2">
+        <PillSwitch
+          label={t.admin.strictness}
+          size="md"
+          value={strictness}
+          onChange={setStrictness}
+          options={STRICTNESS_LEVELS.map((level) => ({ value: level, label: t.strictness[level].name }))}
+        />
+        <p className="mt-2 text-sm text-muted-foreground">{t.strictness[strictness].hint}</p>
       </Field>
       <div className="flex items-center gap-3 sm:col-span-2">
         <Pill type="submit" size="lg" disabled={busy || !motion.trim()}>

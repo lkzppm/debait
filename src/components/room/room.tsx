@@ -1,9 +1,10 @@
 "use client";
 
-import { ArrowLeft, Receipt, X } from "lucide-react";
+import { ArrowLeft, Receipt, Trophy } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { CubesField } from "@/components/cubes/cubes-canvas";
+import { Dialog } from "@/components/site/dialog";
 import { LocaleSwitch } from "@/components/site/locale-switch";
 import { ThemeSwitch } from "@/components/site/theme-switch";
 import { Logo } from "@/components/site/logo";
@@ -43,8 +44,9 @@ export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
   const [identity, setIdentity] = useIdentity(meta.id);
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<string | null>(null);
-  // The ledger panel is closed until asked for, on every screen size.
-  const [panelOpen, setPanelOpen] = useState(false);
+  // The ledger and the result are popups, closed until asked for.
+  const [ledgerOpen, setLedgerOpen] = useState(false);
+  const [resultOpen, setResultOpen] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const feedRef = useRef<HTMLDivElement>(null);
 
@@ -74,10 +76,18 @@ export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
     }
   }, [activity, state.status]);
 
+  // The result pops up by itself when the debate ends, and again when the written ruling lands.
+  const finished = state.status === "finished";
+  const resultStage = finished ? (state.ruling ? "ruling" : "finished") : null;
+  const [shownStage, setShownStage] = useState<string | null>(null);
+  if (ready && resultStage && resultStage !== shownStage) {
+    setShownStage(resultStage);
+    setResultOpen(true);
+  }
+
   const askAbout = useCallback((messageId: string) => {
     setReplyTo(messageId);
     setText((current) => (mentionsBot(current) ? current : `${MENTION} ${current}`));
-    setPanelOpen(false);
     inputRef.current?.focus();
   }, []);
 
@@ -118,21 +128,23 @@ export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
               </span>
             </p>
           </div>
+          <Tag className="hidden text-muted-foreground sm:inline-flex" title={t.strictness[meta.format.strictness].hint}>
+            {t.strictness[meta.format.strictness].name}
+          </Tag>
           {mock && (
             <Tag className="border-warning/50 text-warning" title={t.room.mockBanner}>
               {t.common.mock}
             </Tag>
           )}
+          {finished && (
+            <Pill type="button" size="sm" onClick={() => setResultOpen(true)} aria-haspopup="dialog">
+              <Trophy />
+              <span className="hidden sm:inline">{t.result.title}</span>
+            </Pill>
+          )}
           {state.status !== "lobby" && (
-            <Pill
-              type="button"
-              variant={panelOpen ? "primary" : "outline"}
-              size="sm"
-              onClick={() => setPanelOpen((open) => !open)}
-              aria-expanded={panelOpen}
-              aria-controls="ledger-panel"
-            >
-              {panelOpen ? <X /> : <Receipt />}
+            <Pill type="button" variant="outline" size="sm" onClick={() => setLedgerOpen(true)} aria-haspopup="dialog">
+              <Receipt />
               <span className="hidden sm:inline">{t.panel.ledger}</span>
               {state.ledger.length > 0 && <span className="font-mono tabular-nums">{state.ledger.length}</span>}
             </Pill>
@@ -162,10 +174,8 @@ export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
           <>
             <Meter meta={meta} state={state} names={names} pulse={state.ledger.length} pulseDir={pulseDir} glitch={glitch} />
 
-            <div className="flex min-h-0 flex-1 gap-3">
-              {/* Open, the panel is a column beside the feed from lg up and takes the feed's place below it. */}
-              <main className={cn("min-h-0 min-w-0 flex-1 flex-col gap-3", panelOpen ? "hidden lg:flex" : "flex")}>
-                <div ref={feedRef} className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto scrollbar-none pb-2">
+            <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
+              <div ref={feedRef} className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto scrollbar-none pb-2">
                   {state.timeline.length === 0 && live && (
                     <p className="m-auto text-lg text-muted-foreground">{t.feed.opens(names.a)}</p>
                   )}
@@ -192,38 +202,45 @@ export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
                       />
                     ),
                   )}
-                  {state.status === "finished" && <Result state={state} names={names} />}
+              </div>
+
+              {finished ? (
+                <div className="panel flex flex-wrap items-center justify-center gap-3 p-3 text-sm text-muted-foreground">
+                  <span>{t.composer.finished}</span>
+                  <Pill type="button" variant="outline" size="sm" onClick={() => setResultOpen(true)}>
+                    <Trophy />
+                    {t.result.open}
+                  </Pill>
                 </div>
-
-                {state.status === "finished" ? (
-                  <p className="panel p-3 text-center text-sm text-muted-foreground">{t.composer.finished}</p>
-                ) : identity ? (
-                  <Composer
-                    meta={meta}
-                    state={state}
-                    identity={identity}
-                    names={names}
-                    text={text}
-                    onText={setText}
-                    replyTo={replyTo}
-                    onReplyTo={setReplyTo}
-                    inputRef={inputRef}
-                  />
-                ) : (
-                  <p className="panel p-3 text-center text-sm text-muted-foreground">{t.composer.spectator}</p>
-                )}
-              </main>
-
-              <aside
-                id="ledger-panel"
-                className={cn("panel min-h-0 w-full overflow-y-auto p-5 scrollbar-none lg:w-80 lg:shrink-0", panelOpen ? "block" : "hidden")}
-              >
-                <ScorePanel meta={meta} state={state} names={names} />
-              </aside>
-            </div>
+              ) : identity ? (
+                <Composer
+                  meta={meta}
+                  state={state}
+                  identity={identity}
+                  names={names}
+                  text={text}
+                  onText={setText}
+                  replyTo={replyTo}
+                  onReplyTo={setReplyTo}
+                  inputRef={inputRef}
+                />
+              ) : (
+                <p className="panel p-3 text-center text-sm text-muted-foreground">{t.composer.spectator}</p>
+              )}
+            </main>
           </>
         )}
       </div>
+
+      <Dialog open={ledgerOpen} onOpenChange={setLedgerOpen} title={t.panel.ledger} className="max-w-lg">
+        <div className="p-6 sm:p-8">
+          <ScorePanel meta={meta} state={state} names={names} />
+        </div>
+      </Dialog>
+
+      <Dialog open={resultOpen} onOpenChange={setResultOpen} title={t.result.title} className="max-w-3xl">
+        <Result state={state} names={names} />
+      </Dialog>
     </div>
   );
 }

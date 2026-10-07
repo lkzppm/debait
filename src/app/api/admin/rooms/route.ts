@@ -29,6 +29,7 @@ export async function POST(request: Request) {
       rounds: body.rounds,
       charLimit: body.charLimit,
       challenges: body.challenges,
+      strictness: body.strictness,
     });
   });
 }

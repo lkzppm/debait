@@ -45,7 +45,9 @@ export function Lobby({ meta, state, identity, onJoined }: LobbyProps) {
       <section className="px-1 text-center">
         <p className="eyebrow text-side-a">{identity ? t.lobby.waitingOpponent : t.lobby.title}</p>
         <h2 className="headline mt-4 text-4xl leading-tight font-medium tracking-tight text-balance sm:text-6xl">{meta.motion}</h2>
-        <p className="mt-4 text-muted-foreground">{t.lobby.format(meta.format.rounds, meta.format.challenges)}</p>
+        <p className="mt-4 text-muted-foreground">
+          {t.lobby.format(meta.format.rounds, meta.format.challenges)} · {t.admin.strictness}: {t.strictness[meta.format.strictness].name.toLowerCase()}
+        </p>
       </section>
 
       {!identity && (

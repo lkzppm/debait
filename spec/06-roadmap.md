@@ -65,6 +65,8 @@ Earlier recommendation, before Lucas proposed Debait: **Tira-Teima with the bot 
 ### Tuesday 2026-10-06 — done
 Research, spec, repository, and the scaffold described above (ahead of the original plan, which had only the judge in the terminal for today; the price is that the judge itself is still untested against the real model).
 
+Evening pass (2026-10-06, local, not yet committed): Deb's feedback and the `@deb` calls as chat bubbles, the ledger and the result as popups, the composer's `@` button replaced by a Deb help popup, and **three levels of the judge** (lenient, balanced, strict) picked on `/create` (`03-judge.md`, `04-ui-design.md`). Seen on Groq: the lenient prompt still flags one fallacy per weak message (confidence 0.9) and rates a bad rebuttal 2/1/2, so the leniency that is certain is the code's (4 points per severity, cap 20); the calibration wording was firmed up after that run and not re-tested.
+
 ### Wednesday 2026-10-07 — make the judge real
 - Groq key; the first-run checklist in `03-judge.md`; tune prompts and `maxOutputTokens` with `pnpm judge` and `pnpm mention`; measure tokens per call.
 - Upstash + Vercel; a debate between two real devices on the deployment.

@@ -2,10 +2,12 @@
 
 import { ArrowUp, AtSign, X } from "lucide-react";
 import { useState, type RefObject } from "react";
+import { Deb } from "@/components/site/deb";
+import { Dialog } from "@/components/site/dialog";
 import { Pill } from "@/components/site/pill";
 import { useT } from "@/i18n/LocaleProvider";
 import { api, type ClientError } from "@/lib/api";
-import { MENTION, mentionsBot } from "@/lib/brand";
+import { BRAND, MENTION, mentionsBot } from "@/lib/brand";
 import { MENTION_LIMIT } from "@/lib/debate/limits";
 import type { DebateState, RoomMeta, Seat } from "@/lib/debate/types";
 import type { Identity } from "@/lib/identity";
@@ -33,6 +35,7 @@ export function Composer({ meta, state, identity, names, text, onText, replyTo, 
   const t = useT();
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<ClientError | null>(null);
+  const [help, setHelp] = useState(false);
 
   const seat = identity.seat;
   const myTurn = state.turn === seat;
@@ -46,7 +49,9 @@ export function Composer({ meta, state, identity, names, text, onText, replyTo, 
   const blocked = isMention ? state.pendingAsk : !myTurn;
   const canSend = !sending && trimmed.length > 0 && trimmed.length <= limit && !blocked;
 
-  const callBot = () => {
+  /** From the help popup: starts a call to the bot in the field. */
+  const tryMention = () => {
+    setHelp(false);
     if (!mentionsBot(text)) onText(`${MENTION} ${text}`.trimEnd() + " ");
     inputRef.current?.focus();
   };
@@ -109,26 +114,34 @@ export function Composer({ meta, state, identity, names, text, onText, replyTo, 
             isMention ? "border-bot/50 font-mono text-[15px]" : "border-input focus-visible:border-side-a",
           )}
         />
-        <div className="flex flex-col gap-1.5">
-          <Pill type="button" variant="outline" size="icon" onClick={callBot} title={t.composer.callBot} aria-label={t.composer.callBot}>
-            <AtSign />
-          </Pill>
-          <Pill
-            type="button"
-            variant={seat === "a" ? "primary" : "green"}
-            size="icon"
-            onClick={send}
-            disabled={!canSend}
-            title={t.composer.send}
-            aria-label={t.composer.send}
-          >
-            <ArrowUp />
-          </Pill>
-        </div>
+        <Pill
+          type="button"
+          variant={seat === "a" ? "primary" : "green"}
+          size="icon"
+          onClick={send}
+          disabled={!canSend}
+          title={t.composer.send}
+          aria-label={t.composer.send}
+          className="self-end"
+        >
+          <ArrowUp />
+        </Pill>
       </div>
 
       <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs text-muted-foreground">
-        <span className={cn(error ? "text-destructive" : !isMention && myTurn && (seat === "a" ? "text-side-a" : "text-side-b"))}>
+        {/* Deb's face opens the help: what a message with @deb can ask for. */}
+        <button
+          type="button"
+          onClick={() => setHelp(true)}
+          aria-haspopup="dialog"
+          aria-expanded={help}
+          title={t.composer.help}
+          className="inline-flex items-center gap-1.5 rounded-full border border-bot/30 py-0.5 pr-2.5 pl-1.5 text-bot transition-colors hover:bg-bot/10"
+        >
+          <Deb mood={isMention ? "busy" : "idle"} className="size-4" />
+          <span className="font-mono">{MENTION}</span>
+        </button>
+        <span className={cn("min-w-0 flex-1", error ? "text-destructive" : !isMention && myTurn && (seat === "a" ? "text-side-a" : "text-side-b"))}>
           {error
             ? t.errors[error]
             : isMention
@@ -146,6 +159,41 @@ export function Composer({ meta, state, identity, names, text, onText, replyTo, 
           </span>
         </span>
       </div>
+
+      <Dialog open={help} onOpenChange={setHelp} title={t.composer.help}>
+        <div className="flex flex-col gap-5 p-6 sm:p-8">
+          <div className="flex items-center gap-3">
+            <Deb mood="idle" sides className="size-9" />
+            <div>
+              <p className="eyebrow text-side-a">{BRAND.bot.name}</p>
+              <h2 className="text-2xl font-medium tracking-tight">{t.composer.help}</h2>
+            </div>
+          </div>
+          <p className="text-muted-foreground">{t.composer.helpLead}</p>
+          <ol className="grid gap-3 sm:grid-cols-2">
+            {t.composer.helpItems.map((item, index) => (
+              <li key={index} className="border border-border p-4">
+                <p className="eyebrow text-side-a">
+                  {index + 1}. {item.title}
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
+              </li>
+            ))}
+          </ol>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <code className="font-mono text-sm text-muted-foreground">{t.composer.helpExample}</code>
+            <div className="flex gap-2">
+              <Pill type="button" variant="outline" size="sm" onClick={() => setHelp(false)}>
+                {t.common.close}
+              </Pill>
+              <Pill type="button" size="sm" onClick={tryMention}>
+                <AtSign />
+                {t.composer.callBot}
+              </Pill>
+            </div>
+          </div>
+        </div>
+      </Dialog>
     </div>
   );
 }

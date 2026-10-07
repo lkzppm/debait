@@ -2,7 +2,8 @@ import { createHash } from "node:crypto";
 import { customAlphabet, nanoid } from "nanoid";
 import { isLocale, type Locale } from "@/i18n/locales";
 import { reduce } from "./debate/reducer";
-import type { DebateEvent, DebateEventBody, DebateState, RoomFormat, RoomMeta, RoomStatus, Seat } from "./debate/types";
+import { isStrictness, type DebateEvent, type DebateEventBody, type DebateState, type RoomFormat, type RoomMeta, type RoomStatus, type Seat } from "./debate/types";
+import { DEFAULT_STRICTNESS } from "./debate/scoring";
 import { ApiError } from "./http";
 import { kv } from "./store";
 import { getRoomUsage, roomUsageKey, type UsageByModel } from "./usage";
@@ -60,6 +61,7 @@ export interface CreateRoomInput {
   rounds?: unknown;
   charLimit?: unknown;
   challenges?: unknown;
+  strictness?: unknown;
 }
 
 export async function createRoom(input: CreateRoomInput): Promise<RoomRecord> {
@@ -71,6 +73,7 @@ export async function createRoom(input: CreateRoomInput): Promise<RoomRecord> {
     rounds: clampInt(input.rounds, FORMAT_LIMITS.rounds),
     charLimit: clampInt(input.charLimit, FORMAT_LIMITS.charLimit),
     challenges: clampInt(input.challenges, FORMAT_LIMITS.challenges),
+    strictness: isStrictness(input.strictness) ? input.strictness : DEFAULT_STRICTNESS,
   };
 
   const store = kv();
@@ -86,7 +89,11 @@ export async function createRoom(input: CreateRoomInput): Promise<RoomRecord> {
 }
 
 export async function getRoom(id: string): Promise<RoomRecord | null> {
-  return kv().get<RoomRecord>(roomKey(id));
+  const room = await kv().get<RoomRecord>(roomKey(id));
+  // Rooms created before the judge had levels (2026-10-06) are read as balanced.
+  if (!room) return null;
+  const strictness = isStrictness(room.format.strictness) ? room.format.strictness : DEFAULT_STRICTNESS;
+  return { ...room, format: { ...room.format, strictness } };
 }
 
 export async function roomExists(id: string): Promise<boolean> {

@@ -6,6 +6,8 @@
  *   pnpm seed --port 3003          # another port
  *   pnpm seed --locale en          # English motion and messages
  *   pnpm seed --full               # play every round, so the result screen shows
+ *   pnpm seed --level lenient      # the judge's level (lenient, balanced, strict)
+ *   pnpm seed --pause 20000        # ms between messages (default 1500; use ~20000 on Groq, 8,000 tokens/min)
  *
  * It signs in with the admin password (ADMIN_PASSWORD, or "admin" in
  * development), creates the room, seats Ana and Bia, posts their arguments
@@ -22,8 +24,10 @@ const option = (name: string) => {
 const port = option("port") ?? "3000";
 const locale = option("locale") === "en" ? "en" : "pt";
 const full = args.includes("--full");
+const level = option("level") ?? "balanced";
+const pause = Number(option("pause") ?? 1500);
 const base = `http://localhost:${port}`;
-const password = process.env.ADMIN_PASSWORD ?? "admin";
+const password = process.env.ADMIN_PASSWORD || "admin";
 
 const SCRIPT = {
   pt: {
@@ -83,8 +87,9 @@ async function main() {
     rounds: 3,
     challenges: 3,
     charLimit: 600,
+    strictness: level,
   });
-  console.log(`room ${id}`);
+  console.log(`room ${id} (${level})`);
 
   const seats = {
     a: await call<{ seat: "a"; token: string }>(`/api/rooms/${id}/join`, { seat: "a", name: SCRIPT.names.a }),
@@ -101,11 +106,11 @@ async function main() {
     const message = await call<{ id: string }>(`/api/rooms/${id}/messages`, { token: seats[seat].token, text: SCRIPT.messages[index] });
     if (index === 0) firstMessageId = message.id;
     console.log(`${SCRIPT.names[seat]}: ${SCRIPT.messages[index].slice(0, 60)}…`);
-    await sleep(1500);
+    await sleep(pause);
     if (index === 1) {
       await call(`/api/rooms/${id}/mention`, { token: seats.b.token, text: `@deb ${SCRIPT.ask}`, replyTo: firstMessageId });
       console.log(`${SCRIPT.names.b} called @deb about ${SCRIPT.names.a}'s first message`);
-      await sleep(2500);
+      await sleep(Math.max(2500, pause));
     }
   }
 
