@@ -17,7 +17,7 @@ function Percent({ value }: { value: number }) {
   return <motion.span>{text}</motion.span>;
 }
 
-function Side({ seat, label, name, stance, percent, active }: { seat: Seat; label: string; name: string; stance: string; percent: number; active: boolean }) {
+function Side({ seat, name, stance, percent, active }: { seat: Seat; name: string; stance: string; percent: number; active: boolean }) {
   const right = seat === "b";
   const tone = seat === "a" ? "text-side-a" : "text-side-b";
   return (
@@ -29,12 +29,11 @@ function Side({ seat, label, name, stance, percent, active }: { seat: Seat; labe
         <span className="text-lg sm:text-2xl">%</span>
       </p>
       <div className="min-w-0 pb-1">
-        <p className={cn("eyebrow flex items-center gap-2", tone, right && "flex-row-reverse")}>
-          {label}
+        <p className={cn("flex items-center gap-2 text-sm font-medium sm:text-lg", right && "flex-row-reverse")}>
+          <span className="truncate">{name}</span>
           {/* A blinking cell marks whose turn it is. */}
-          {active && <span className={cn("size-2 animate-pulse", seat === "a" ? "bg-side-a" : "bg-side-b")} />}
+          {active && <span className={cn("size-2 shrink-0 animate-pulse", seat === "a" ? "bg-side-a" : "bg-side-b")} />}
         </p>
-        <p className="truncate text-sm font-medium sm:text-lg">{name}</p>
         <p className="truncate text-xs text-muted-foreground sm:text-sm">{stance}</p>
       </div>
     </div>
@@ -63,8 +62,8 @@ export function Meter({ meta, state, names, pulse, pulseDir, glitch }: MeterProp
   return (
     <section className="panel px-3 py-3 sm:px-6 sm:py-4">
       <div className="flex items-end justify-between gap-3 sm:gap-4">
-        <Side seat="a" label={t.meter.side("A")} name={names.a} stance={meta.stances.a} percent={a} active={state.turn === "a"} />
-        <Side seat="b" label={t.meter.side("B")} name={names.b} stance={meta.stances.b} percent={b} active={state.turn === "b"} />
+        <Side seat="a" name={names.a} stance={meta.stances.a} percent={a} active={state.turn === "a"} />
+        <Side seat="b" name={names.b} stance={meta.stances.b} percent={b} active={state.turn === "b"} />
       </div>
 
       <div
