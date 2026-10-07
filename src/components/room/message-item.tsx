@@ -4,6 +4,7 @@ import { AtSign, Check, ChevronDown, RotateCw, TriangleAlert } from "lucide-reac
 import { motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { Deb, verdictMood } from "@/components/site/deb";
+import { Debater } from "@/components/site/debater";
 import { Tag } from "@/components/site/pill";
 import { useT } from "@/i18n/LocaleProvider";
 import { BRAND } from "@/lib/brand";
@@ -104,46 +105,50 @@ export function MessageItem({ message, name, canAct, onAsk, onRetry }: MessageIt
       transition={{ duration: 0.25 }}
       className={cn("flex w-full flex-col gap-1.5", right ? "items-end" : "items-start")}
     >
-      <header className={cn("flex items-baseline gap-2 px-1 text-xs", right && "flex-row-reverse")}>
+      {/* The name sits over the bubble, past the avatar's column. */}
+      <header className={cn("flex items-baseline gap-2 px-1 text-xs", right ? "flex-row-reverse pr-8" : "pl-8")}>
         <span className={cn("font-medium", sideText(message.seat))}>{name}</span>
         <span className="text-muted-foreground">{t.feed.round(message.round)}</span>
       </header>
-      {/* The bubble: tinted in the side's colour, round except the corner that points at the name. */}
-      <div
-        className={cn(
-          "w-fit max-w-[min(100%,40rem)] rounded-2xl border",
-          message.seat === "a" ? "rounded-tl-sm border-side-a/30 bg-side-a/12" : "rounded-tr-sm border-side-b/30 bg-side-b/12",
-        )}
-      >
-        <p className="px-4 py-3 text-base leading-relaxed whitespace-pre-wrap sm:text-[17px]">
-          {segments(message.text, marks).map((run, index) =>
-            run.mark === null ? (
-              <span key={index}>{run.text}</span>
-            ) : run.mark.penalty === null ? (
-              <span key={index} className="excerpt-checked" title={t.feed.checked}>
-                {run.text}
-              </span>
-            ) : (
-              // A span, not a <button>: a button is an inline block and would not wrap with the sentence.
-              <span
-                key={index}
-                role="button"
-                tabIndex={0}
-                className="excerpt"
-                data-open={openPenalty === run.mark.penalty}
-                onClick={() => toggle(run.mark!.penalty!)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    toggle(run.mark!.penalty!);
-                  }
-                }}
-              >
-                {run.text}
-              </span>
-            ),
+      {/* The bubble, with the debater's avatar at the outer edge, in the same column Deb's face takes below. */}
+      <div className={cn("flex w-full max-w-[min(100%,40rem)] items-start gap-2", right && "flex-row-reverse")}>
+        <Debater className={cn("mt-1.5 size-6 shrink-0", sideText(message.seat))} title={name} />
+        <div
+          className={cn(
+            "w-fit max-w-full rounded-2xl border",
+            message.seat === "a" ? "rounded-tl-sm border-side-a/30 bg-side-a/12" : "rounded-tr-sm border-side-b/30 bg-side-b/12",
           )}
-        </p>
+        >
+          <p className="px-4 py-3 text-base leading-relaxed whitespace-pre-wrap sm:text-[17px]">
+            {segments(message.text, marks).map((run, index) =>
+              run.mark === null ? (
+                <span key={index}>{run.text}</span>
+              ) : run.mark.penalty === null ? (
+                <span key={index} className="excerpt-checked" title={t.feed.checked}>
+                  {run.text}
+                </span>
+              ) : (
+                // A span, not a <button>: a button is an inline block and would not wrap with the sentence.
+                <span
+                  key={index}
+                  role="button"
+                  tabIndex={0}
+                  className="excerpt"
+                  data-open={openPenalty === run.mark.penalty}
+                  onClick={() => toggle(run.mark!.penalty!)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      toggle(run.mark!.penalty!);
+                    }
+                  }}
+                >
+                  {run.text}
+                </span>
+              ),
+            )}
+          </p>
+        </div>
       </div>
 
       {/* Deb answers under the message, in a bubble of her own, from the same side so it reads as a reply to it. */}
@@ -199,7 +204,7 @@ export function MessageItem({ message, name, canAct, onAsk, onRetry }: MessageIt
                       onClick={() => toggle(index)}
                       aria-expanded={openPenalty === index}
                       className={cn(
-                        "inline-flex items-center gap-1.5 border border-destructive/50 bg-background px-2 py-0.5 text-xs text-destructive transition-colors hover:bg-destructive/15",
+                        "inline-flex items-center gap-1.5 border border-destructive/50 bg-background px-2 py-1 text-xs text-destructive transition-colors hover:bg-destructive/15",
                         TILTS[index % TILTS.length],
                         openPenalty === index && "bg-destructive/15",
                       )}
@@ -223,7 +228,7 @@ export function MessageItem({ message, name, canAct, onAsk, onRetry }: MessageIt
                     aria-expanded={showRubric}
                     aria-label={t.feed.rubric}
                     title={t.feed.rubric}
-                    className="grid size-6 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+                    className="grid size-7 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
                   >
                     <ChevronDown className={cn("size-3.5 transition-transform", showRubric && "rotate-180")} />
                   </button>
@@ -282,7 +287,7 @@ export function MessageItem({ message, name, canAct, onAsk, onRetry }: MessageIt
               <button
                 type="button"
                 onClick={() => onAsk(message.id)}
-                className="inline-flex items-center gap-0.5 rounded-full border border-side-a/60 px-2.5 py-0.5 text-side-a hover:bg-side-a/15"
+                className="inline-flex items-center gap-0.5 rounded-full border border-side-a/60 px-2.5 py-1 text-side-a hover:bg-side-a/15"
               >
                 <AtSign className="size-3" />
                 {BRAND.bot.handle}

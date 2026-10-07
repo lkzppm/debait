@@ -21,20 +21,20 @@ function Side({ seat, label, name, stance, percent, active }: { seat: Seat; labe
   const right = seat === "b";
   const tone = seat === "a" ? "text-side-a" : "text-side-b";
   return (
-    <div className={cn("flex min-w-0 flex-1 items-end gap-4", right && "flex-row-reverse text-right")}>
+    <div className={cn("flex min-w-0 flex-1 items-end gap-2 sm:gap-4", right && "flex-row-reverse text-right")}>
       <p className={cn("font-medium tracking-tighter tabular-nums", tone)}>
-        <span className="text-4xl sm:text-5xl">
+        <span className="text-3xl sm:text-5xl">
           <Percent value={percent} />
         </span>
-        <span className="text-xl sm:text-2xl">%</span>
+        <span className="text-lg sm:text-2xl">%</span>
       </p>
-      <div className="min-w-0 pb-1.5">
+      <div className="min-w-0 pb-1">
         <p className={cn("eyebrow flex items-center gap-2", tone, right && "flex-row-reverse")}>
           {label}
           {/* A blinking cell marks whose turn it is. */}
           {active && <span className={cn("size-2 animate-pulse", seat === "a" ? "bg-side-a" : "bg-side-b")} />}
         </p>
-        <p className="truncate text-base font-medium sm:text-lg">{name}</p>
+        <p className="truncate text-sm font-medium sm:text-lg">{name}</p>
         <p className="truncate text-xs text-muted-foreground sm:text-sm">{stance}</p>
       </div>
     </div>
@@ -61,8 +61,8 @@ export function Meter({ meta, state, names, pulse, pulseDir, glitch }: MeterProp
   const a = Math.round(state.share * 100);
   const b = 100 - a;
   return (
-    <section className="panel px-4 py-4 sm:px-6">
-      <div className="flex items-end justify-between gap-4">
+    <section className="panel px-3 py-3 sm:px-6 sm:py-4">
+      <div className="flex items-end justify-between gap-3 sm:gap-4">
         <Side seat="a" label={t.meter.side("A")} name={names.a} stance={meta.stances.a} percent={a} active={state.turn === "a"} />
         <Side seat="b" label={t.meter.side("B")} name={names.b} stance={meta.stances.b} percent={b} active={state.turn === "b"} />
       </div>
@@ -73,16 +73,19 @@ export function Meter({ meta, state, names, pulse, pulseDir, glitch }: MeterProp
         aria-valuemax={100}
         aria-valuenow={a}
         aria-label={t.meter.label(a, b)}
-        className="relative mt-3 h-9 overflow-hidden border border-border sm:h-10"
+        className="relative mt-2.5 h-8 overflow-hidden border border-border sm:mt-3 sm:h-10"
       >
         <CubesBand share={state.share} pulse={pulse} pulseDir={pulseDir} glitch={glitch} provisional={state.provisional} rows={3} />
+        {/* On the band rather than under it, so the meter keeps its height when the label comes and goes. */}
+        {state.provisional && (
+          <span
+            className="eyebrow absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-background/85 px-2 py-0.5 text-muted-foreground"
+            title={t.meter.provisionalHint}
+          >
+            {t.meter.provisional}
+          </span>
+        )}
       </div>
-
-      {state.provisional && (
-        <p className="eyebrow mt-2 text-center text-muted-foreground" title={t.meter.provisionalHint}>
-          {t.meter.provisional}
-        </p>
-      )}
     </section>
   );
 }

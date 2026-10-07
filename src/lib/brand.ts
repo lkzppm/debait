@@ -7,6 +7,12 @@ export const BRAND = {
   name: "Debait",
   wordmark: ["deb", "ai", "t"] as const,
   repo: "https://github.com/lkzppm/debait",
+  /** Who made it, for the footer. */
+  author: {
+    name: "Lucas Pacheco",
+    github: "https://github.com/lkzppm",
+    linkedin: "https://www.linkedin.com/in/lucasppmc/",
+  },
   bot: {
     /** What people type after the @ to call the bot. */
     handle: "deb",

@@ -186,8 +186,9 @@ fn bayer4(at: vec2u) -> f32 {
     // plainly its side's colour.
     var alpha = (0.35 + 0.65 * height) * mix(0.1, 0.36, near) + 0.1 * sweep + 0.3 * stirred;
     alpha = max(saturate(alpha), max(wave * 0.8, capture * 0.7)) * params.intensity;
-    // On the light page a tint this faint washes out: the cubes press harder there.
-    alpha = saturate(alpha * mix(1.7, 1.0, params.dark));
+    // A tint this faint washes out on either page: the cubes press harder on
+    // paper, and somewhat harder on the night page too, or they all but vanish.
+    alpha = saturate(alpha * mix(1.7, 1.45, params.dark));
     // A capture flashes towards white on the dark page; on the light page the
     // full colour is already the brightest thing there is.
     var tint = mix(side, WHITE, 0.6 * capture * params.dark);
@@ -200,7 +201,7 @@ fn bayer4(at: vec2u) -> f32 {
     let glow_side = select(params.color_b.rgb, params.color_a.rgb, speck_reach > 0.0);
     let glow = (0.45 * exp(-abs(speck_reach) / 4.0) + 0.1 * (cluster + 0.6)) * params.intensity;
     let speck_on = glow > bayer4(vec2u(id) * 4u + vec2u(speck));
-    col = mix(bg, glow_side, select(0.0, mix(0.1, 0.07, params.dark), speck_on));
+    col = mix(bg, glow_side, select(0.0, 0.1, speck_on));
 
     // The cube: a square face lifted up and to the left by its height, with
     // the two walls it shows drawn below and to the right (an oblique view).
@@ -229,7 +230,7 @@ fn bayer4(at: vec2u) -> f32 {
 
     // The grid itself: a hairline on the left and top edge of each cell.
     let on_line = local.x < params.line || local.y < params.line;
-    col = mix(col, fg, select(0.0, mix(0.12, 0.1, params.dark), on_line));
+    col = mix(col, fg, select(0.0, mix(0.12, 0.14, params.dark), on_line));
   } else {
     // Mosaic: four flat shades between the page and the full colour, each
     // cell reshuffling on its own clock.

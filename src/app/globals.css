@@ -59,18 +59,21 @@
 :root {
   color-scheme: light;
 
-  --side-a: #9b3dff;
-  --side-a-deep: #7f22e0;
-  --side-b: #0aa896;
-  --side-b-deep: #088c7d;
+  /* Side A blue, side B red (Lucas, 2026-10-07). */
+  --side-a: #2f6bff;
+  --side-a-deep: #1f52d9;
+  --side-b: #e63946;
+  --side-b-deep: #c8232f;
   /* What the big Deb's cells darken towards: on paper a deep tone, never the page. */
-  --side-a-shade: #4a148c;
-  --side-b-shade: #065a50;
+  --side-a-shade: #0b2a7a;
+  --side-b-shade: #6b0f17;
   /* Text on top of either side colour, and on --bot. */
   --ink: #ffffff;
   --bot: #121020;
   /* Deb's bow: pink, on no side. */
   --bow: #e0369a;
+  /* What the bow's cells darken towards, like --side-*-shade for the face. */
+  --bow-shade: #6d0f45;
 
   --background: #f6f5fb;
   --foreground: #121020;
@@ -78,7 +81,7 @@
   --card-foreground: #121020;
   --popover: #ffffff;
   --popover-foreground: #121020;
-  --primary: #9b3dff;
+  --primary: #2f6bff;
   --primary-foreground: #ffffff;
   --secondary: #e9e7f3;
   --secondary-foreground: #121020;
@@ -86,12 +89,12 @@
   --muted-foreground: #5f5b72;
   --accent: rgba(18, 16, 32, 0.06);
   --accent-foreground: #121020;
-  --destructive: #d9304a;
-  --success: #0aa896;
+  --destructive: #c026d3;
+  --success: #2f6bff;
   --warning: #9a5b00;
   --border: rgba(18, 16, 32, 0.12);
   --input: rgba(18, 16, 32, 0.24);
-  --ring: #9b3dff;
+  --ring: #2f6bff;
   --panel: rgba(255, 255, 255, 0.94);
   --radius: 0.25rem;
   /* For the keyframe animations below (utilities use `ease-out-expo`). */
@@ -101,37 +104,38 @@
 .dark {
   color-scheme: dark;
 
-  --side-a: #b44dff;
-  --side-a-deep: #9a2bf0;
-  --side-b: #2ee6d6;
-  --side-b-deep: #12c4b4;
-  --side-a-shade: #07060e;
-  --side-b-shade: #07060e;
-  --ink: #07060e;
-  --bot: #eceaf6;
+  --side-a: #4d8dff;
+  --side-a-deep: #2f6bff;
+  --side-b: #ff4d5e;
+  --side-b-deep: #e63946;
+  --side-a-shade: #070708;
+  --side-b-shade: #070708;
+  --ink: #070708;
+  --bot: #ececef;
   --bow: #ff6fb5;
+  --bow-shade: #070708;
 
-  --background: #07060e;
-  --foreground: #eceaf6;
-  --card: #100e1c;
-  --card-foreground: #eceaf6;
-  --popover: #0c0a17;
-  --popover-foreground: #eceaf6;
-  --primary: #b44dff;
-  --primary-foreground: #07060e;
-  --secondary: #1b1829;
-  --secondary-foreground: #eceaf6;
-  --muted: #1b1829;
-  --muted-foreground: #9893ad;
-  --accent: rgba(236, 234, 246, 0.08);
-  --accent-foreground: #eceaf6;
-  --destructive: #ff5c7a;
-  --success: #2ee6d6;
+  --background: #070708;
+  --foreground: #ececef;
+  --card: #111113;
+  --card-foreground: #ececef;
+  --popover: #0c0c0e;
+  --popover-foreground: #ececef;
+  --primary: #4d8dff;
+  --primary-foreground: #070708;
+  --secondary: #1a1a1d;
+  --secondary-foreground: #ececef;
+  --muted: #1a1a1d;
+  --muted-foreground: #9a9aa3;
+  --accent: rgba(236, 236, 239, 0.08);
+  --accent-foreground: #ececef;
+  --destructive: #e879f9;
+  --success: #4d8dff;
   --warning: #ffc957;
-  --border: rgba(236, 234, 246, 0.12);
-  --input: rgba(236, 234, 246, 0.2);
-  --ring: #b44dff;
-  --panel: rgba(16, 14, 28, 0.94);
+  --border: rgba(236, 236, 239, 0.12);
+  --input: rgba(236, 236, 239, 0.2);
+  --ring: #4d8dff;
+  --panel: rgba(17, 17, 19, 0.94);
 }
 
 @layer base {
@@ -153,6 +157,16 @@
 @utility panel {
   background: var(--panel);
   border: 1px solid var(--border);
+}
+
+/* The top bar's height: two rows on a phone, one from `sm` up (`site/nav.tsx`). */
+:root {
+  --nav-h: 6.5rem;
+}
+@media (width >= 40rem) {
+  :root {
+    --nav-h: 3.5rem;
+  }
 }
 
 @utility scrollbar-none {
@@ -274,7 +288,7 @@
 /* Deb on the landing page: a face of cubes. Each lit cell is a small block
    with a lit top-left edge and a shaded bottom-right one. */
 .hero-mark {
-  --mark-cell: clamp(20px, 2.5vw, 30px);
+  --mark-cell: clamp(16px, 2.5vw, 30px);
   animation:
     rise 0.7s var(--ease-expo) backwards,
     float 7s ease-in-out 0.7s infinite;
@@ -296,11 +310,22 @@
     inset 2px 2px 0 rgb(255 255 255 / 0.22),
     inset -2px -2px 0 rgb(0 0 0 / 0.2);
 }
-.hero-mark-cell[data-state="body"]:hover {
-  position: relative;
-  z-index: 1;
-  scale: 1.18;
-  filter: brightness(1.15);
+@media (hover: hover) {
+  .hero-mark-cell:is([data-state="body"], [data-state="bow"]):hover {
+    position: relative;
+    z-index: 1;
+    scale: 1.18;
+    filter: brightness(1.15);
+  }
+  /* The bow is small and all one colour, so it answers louder: the whole bow
+     lights up while the pointer is on it, and the cell under it grows more. */
+  .hero-mark:has([data-state="bow"]:hover) .hero-mark-cell[data-state="bow"] {
+    filter: brightness(1.25);
+  }
+  .hero-mark-cell[data-state="bow"]:hover {
+    scale: 1.28;
+    filter: brightness(1.4);
+  }
 }
 @keyframes cell-in {
   from {
