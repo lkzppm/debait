@@ -15,7 +15,8 @@
 | motion | 14 | `motion/react` |
 | tailwindcss | 4.3 | tokens in `src/app/globals.css` |
 | shadcn (radix-nova) | 4.21 | `components.json` copied from CV-AI; `cn` comes from the `cn` package |
-| qrcode.react, nanoid, geist, lucide-react | | QR for the invite, ids and tokens, fonts, icons |
+| qrcode.react, nanoid, geist, lucide-react, simple-icons | | QR for the invite, ids and tokens, Geist Mono, interface icons, brand glyphs (GitHub) |
+| Inter via `next/font/google` | | The text face; downloaded at build time, so a build needs network access (Next falls back to a system font and warns when it cannot) |
 | typescript / eslint | 5.9 / 9 | **Pinned on purpose.** `pnpm add -D typescript eslint` pulled TypeScript 7 and ESLint 10, which CV-AI's toolchain was never tried with |
 
 Not used, despite earlier plans: `@upstash/realtime` (see the decision in `02-architecture.md`), `@ai-sdk/react`, `zustand`, `@upstash/ratelimit`.
@@ -45,7 +46,7 @@ pnpm dev                      # http://localhost:3000, no configuration needed (
 pnpm lint · pnpm typecheck · pnpm build      # what CI runs (typecheck = next typegen + tsc)
 pnpm judge '<message>' [--locale en|pt]      # one judgement in the terminal, prints tokens used
 pnpm mention '<question>' [--reply]          # one @deb call in the terminal
-pnpm exec vgpu check src/components/arena/arena.wgsl
+pnpm exec vgpu check src/components/cubes/cubes.wgsl
 ```
 
 Local walkthrough: `/admin` (password `admin`), create a debate, open its link in two browser windows (or one normal and one private window, since the seat lives in localStorage), join one side in each.

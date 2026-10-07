@@ -8,7 +8,9 @@ Done today:
 
 - [x] Idea validated by web research (`01-market-research.md`); differentiation defined; name decided (**Debait**, bot **@deb**).
 - [x] Public repository `lkzppm/debait`, branches `main` and `dev`, CI (lint, types, shader check, build).
-- [x] Scaffold of the whole application: rooms and seats, turn-based debate, event log with live updates over SSE, scoring and reducer, the judge layer (Groq engine + mock engine, prompts in pt and en), the `@deb` mention, the closing ruling, the admin panel with usage tracking, bilingual interface, the vgpu arena with CSS fallback.
+- [x] Scaffold of the whole application: rooms and seats, turn-based debate, event log with live updates over SSE, scoring and reducer, the judge layer (Groq engine + mock engine, prompts in pt and en), the `@deb` mention, the closing ruling, the admin panel with usage tracking, bilingual interface, the vgpu background with a fallback.
+- [x] Visual redesign the same day, after Lucas rejected the first look: the cognee.ai direction (black page, pixel grid, vgpu cubes, purple vs green). Details in `04-ui-design.md`. On branch `feat/pixel-grid-visual`, uncommitted until Lucas has looked at it.
+- [x] Revision of that redesign, also 2026-10-06 (Lucas): landing page laid out like GraphMan's (live mark, name, one sentence, a scripted demo figure, three facts), light and dark themes with new colours, and a richer cubes shader (raised cubes, captures at the frontier, dithered glow, pointer rings). **Not seen running by Claude**; typecheck, lint and `vgpu check` pass.
 
 What was actually run, and what was not:
 
@@ -16,18 +18,19 @@ What was actually run, and what was not:
 |---|---|
 | `pnpm lint`, `pnpm typecheck`, `pnpm build`, `vgpu check` | pass |
 | A full debate through the HTTP API on the **mock judge + memory store** (join, turn guard, judgements, `@deb` validate and explain, busy guard, manipulation flag, finish, ruling, admin list, delete, SSE resume with `Last-Event-ID`) | ran, behaved as designed |
-| Screens in headless Chromium at 1440 px and 390 px (landing, lobby, live room as a debater, score tab, admin) | looked at once; no console errors |
+| Screens in headless Chromium at 1440 px and 390 px (landing, lobby, live room as a debater, score tab, admin) | looked at once, **before** the revision (new landing, themes, new shader); nothing after it was seen |
 | **Groq engine** (`src/judge/groq.ts`), prompts, schemas under strict mode, `browser_search` | **never run**: no API key yet |
 | **Upstash driver** | **never run**: no database yet |
 | **Vercel deployment**, `after()` and the SSE recycle on Vercel | **not done** |
-| The **arena shader** in a WebGPU browser; real phones | **not seen** |
+| The **Groq engine from the scripts** (`pnpm judge`, `pnpm mention --reply`, a ruling) | ran once each on 2026-10-06 with Lucas's key; see `03-judge.md`. The provider dropped the search sources; fixed by reading Groq's raw `executed_tools` |
+| The **cubes shader** in a WebGPU browser; real phones | **not seen by Claude**: Lucas verifies visual changes himself |
 | Unit tests | none written (Lucas: no testing for now) |
 
 ## Next steps (in order)
 
 1. **Lucas refines the interface and the agent logic** on the mock judge (`pnpm dev`, no configuration).
 2. **Put the Groq key in `.env.local`** and go through the checklist "First run with a key" in `03-judge.md`, starting with `pnpm judge`. This is the riskiest unknown left: do it before polishing.
-3. Look at the arena in Chrome; tune or cut it.
+3. Look at the landing page, both themes and the cubes in Chrome and on a phone; tune them (the shader's knobs are the `alpha`, `capture` and `glow` lines in `cubes.wgsl`).
 4. Upstash Redis + Vercel project + env vars (`05-stack-and-versions.md`, "Deploying"); one debate between two phones on mobile data.
 5. Rehearse the demo with the real motion; record a backup video.
 
@@ -68,7 +71,7 @@ Research, spec, repository, and the scaffold described above (ahead of the origi
 - Interface refinement (Lucas).
 
 ### Thursday 2026-10-08 — the look and the rehearsal
-- The arena in a real browser; real phones on mobile data; both languages.
+- The cubes in a real browser; real phones on mobile data; both languages.
 - Full rehearsal with the demo motion. Record a backup video of a good run.
 - Slides or presentation notes in `docs/`.
 - **Stop feature work by Thursday night.** A debate uses a noticeable share of the daily token quota (`03-judge.md`), and the quota must be full on Friday.
@@ -77,7 +80,7 @@ Research, spec, repository, and the scaffold described above (ahead of the origi
 - One short smoke test at most before class (quota). Check the projector browser for WebGPU. Admin panel open on the laptop to watch usage during the demo.
 
 ### Cut line
-If time runs short: drop the arena shader (the CSS fallback becomes the look) before touching the ledger or `@deb`. Those two are the project. If the Groq mention with web search proves unreliable, keep `@deb` for explanations and rehearsed validations only.
+If time runs short: drop the cubes shader (the static fallback becomes the look) before touching the ledger or `@deb`. Those two are the project. If the Groq mention with web search proves unreliable, keep `@deb` for explanations and rehearsed validations only.
 
 ## After Friday (ideas, not planned)
 
@@ -101,5 +104,5 @@ If time runs short: drop the arena shader (the CSS fallback becomes the look) be
 | Free-tier limit during the demo | Debate stalls in front of the class | Only the admin creates debates; short format (3 rounds); model split; challenge cap; no heavy testing on Friday; visible "thinking" state; backup video |
 | Realtime drops on venue Wi-Fi or at the function limit | Meter stops moving | Snapshot + dedupe design, polling fallback, test on mobile data |
 | Political motion goes sideways | Classroom discomfort, accusations of bias | Playful demo motion; sides anonymised to the model; score is about form |
-| WebGPU missing on the projector laptop | No arena | CSS fallback; check the browser beforehand (Chrome/Edge, Safari 26+, Firefox 141+) |
+| WebGPU missing on the projector laptop | No animated cubes | Static fallback; check the browser beforehand (Chrome/Edge, Safari 26+, Firefox 141+) |
 | "This already exists" | Professor values originality | Know the competitors (`01-market-research.md`), lead with the two differentiators |

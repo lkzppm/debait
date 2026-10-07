@@ -32,7 +32,7 @@ Other AI debate apps exist (`01-market-research.md`). This one stands on two fea
 
 ## The admin panel (Decided by Lucas, 2026-10-06)
 
-Because the Groq key is on the free tier, debates are not open to the public. A password-protected `/admin` page is the only place to **create, stop and delete debates**, and it shows **spending**: tokens used today per model against the daily limit, and per debate. This replaces public room creation and most rate-limiting work. Details in `02-architecture.md`.
+Because the Groq key is on the free tier, debates are not open to the public. A password-protected `/create` page is the only place to **create** a debate, and `/admin` (same password) is where to **stop and delete** them and see **spending**: tokens used today per model against the daily limit, and per debate. This replaces public room creation and most rate-limiting work. Details in `02-architecture.md`.
 
 ## What the meter means (keep this honest everywhere)
 

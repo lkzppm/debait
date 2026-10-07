@@ -2,7 +2,7 @@
 
 The AI core, and the part most likely to be questioned in the presentation.
 
-Status on 2026-10-06: **implemented, never run against Groq**. The code is in `src/judge/` (engines, prompts, schemas) and `src/lib/debate/scoring.ts` (the arithmetic). The scoring, the reducer and the mock engine ran end to end; the Groq engine only typechecks, because there was no API key yet. Numbers (weights, penalties, thresholds, `maxOutputTokens`) are starting points to tune with `pnpm judge`. The section "First run with a key" at the end lists what to check.
+Status on 2026-10-06 (evening): **all three Groq calls ran once from the scripts** with Lucas's key: a judgement, a mention with web search, a ruling. Observations are in "First run with a key" at the end. Not yet run: the engine inside the app (a real room on the dev server), and the budget guard against a real 429.
 
 ## Principles
 
@@ -167,16 +167,14 @@ How the design stays inside it:
 
 Used when `GROQ_API_KEY` is missing or `JUDGE_ENGINE=mock`. It is deterministic keyword heuristics with artificial latency: insults become ad hominem, "todo mundo sabe" an appeal to the majority, "ignore as instruções" a manipulation attempt, sentences with numbers check-worthy claims. Its texts start with `[mock]`, its events carry `engine: "mock"`, and the room shows a banner. It exists to build and demo the interface without spending quota; **its scores mean nothing** and must never be presented as the judge.
 
-## First run with a key (checklist)
+## First run with a key (observed 2026-10-06, from the scripts)
 
-Nothing below has been observed yet.
-
-1. `pnpm judge '<message>'`: does Groq's strict mode accept `judgementSchema` through `Output.object`? (CV-AI's similar schemas passed on the 120b.)
-2. Tokens per judgement, printed by the script: replace the 1.5k to 2k estimate below.
-3. `pnpm mention '@deb …' --reply`: does a `browser_search` call end with `finishReason: "stop"` and fill `result.sources`? Anything else is thrown as an error. Does the 20b handle the small classification schema?
-4. Are the quotes verbatim? Flags whose quote is not found in the message are dropped silently, which would look like a judge that never flags.
-5. The `maxOutputTokens` values (judgement 1600, search 1400, classify 900, offline 800, ruling 1000) are guesses: watch for `truncated` errors.
-6. Prompt quality in both languages, and the injection attempts.
+1. `pnpm judge`: strict mode accepted `judgementSchema` on the 120b at the first try. A Portuguese message with an ad hominem and a Stanford claim came back with the fallacy (severity 2, confidence 0.9, quote verbatim, so it counted: 24 = 40 − 16), the claim marked check-worthy, a note and a summary. **1.6 s, 2,049 tokens** (1,480 in, 569 out).
+2. `pnpm mention … --reply`: `finishReason: "stop"`, but **`result.sources` is always empty with `@ai-sdk/groq` 4.0**: the provider drops Groq's `message.executed_tools`. Fixed the same day in `src/judge/models.ts` (`mentionModelWithTrace`): a provider with a wrapped `fetch` reads the raw response, collects every search result and every page the model opened, and `groq.ts` takes the opened pages plus the ones the answer cites by number (`【3†L11-L15】`, markers then stripped from the text), falling back to the first three results. After the fix: real URLs, a verbatim claim quote, a Portuguese answer, status `false` for a made-up 60%. **3.3 s, about 7,500 tokens per call** (two requests; the search results are the bulk of the input). The 20b handled the classification schema.
+3. Ruling on the 120b: text, best argument per side and advice came back well formed; **about 950 tokens**. The model may lightly rewrite the quoted "best" argument.
+4. Watch: **a mention is 7,500 of the 8,000 tokens per minute** of the 20b, so two `@deb` calls inside one minute will hit a 429 (`rate_limited`, shown as "Deb could not answer"). One call per minute per deployment is the practical limit on the free tier. The first mention test also showed the 20b answering partly in English and about a claim that was not in the transcript when the question did not match any message: in a real room the question refers to a real message, but the prompt could insist harder on the room's language.
+5. `maxOutputTokens` values (judgement 1600, search 1400, classify 900, offline 800, ruling 1000) held in these runs; no `truncated` error seen.
+6. Not yet observed: English prompts, injection attempts, and the whole pipeline inside a live room. `JUDGE_DEBUG=1` prints the search step (sources found, opened, cited, the text) to stderr.
 
 ## Evaluation
 
