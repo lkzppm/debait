@@ -1,12 +1,14 @@
 "use client";
 
-import { AtSign, ChevronDown, RotateCw, Scale, ShieldAlert } from "lucide-react";
+import { AtSign, Check, ChevronDown, RotateCw, TriangleAlert } from "lucide-react";
 import { motion } from "motion/react";
 import { useMemo, useState } from "react";
+import { Deb, verdictMood } from "@/components/site/deb";
+import { Tag } from "@/components/site/pill";
 import { useT } from "@/i18n/LocaleProvider";
-import { MENTION } from "@/lib/brand";
+import { BRAND } from "@/lib/brand";
 import { findQuote } from "@/lib/debate/quote";
-import { QUALITY_KEYS, type MessageView, type Seat } from "@/lib/debate/types";
+import { QUALITY_KEYS, type MessageView, type Seat, type ValidationStatus } from "@/lib/debate/types";
 import { cn } from "@/lib/utils";
 
 interface Mark {
@@ -31,7 +33,32 @@ function segments(text: string, marks: Mark[]) {
   return runs;
 }
 
-const signed = (value: number) => (value > 0 ? `+${value}` : value < 0 ? `−${Math.abs(value)}` : "0");
+export const signed = (value: number) => (value > 0 ? `+${value}` : value < 0 ? `−${Math.abs(value)}` : "0");
+export const sideText = (seat: Seat) => (seat === "a" ? "text-side-a" : "text-side-b");
+export const sideBg = (seat: Seat) => (seat === "a" ? "bg-side-a" : "bg-side-b");
+export const sideMark = (seat: Seat) => (seat === "a" ? "mark-a" : "mark-b");
+
+/** A ruling as a tag. Confirmed is neutral on purpose: green already means side B. */
+export function StatusTag({ status, children }: { status: ValidationStatus; children: React.ReactNode }) {
+  const tone =
+    status === "confirmed"
+      ? "border-foreground/60 text-foreground"
+      : status === "imprecise"
+        ? "border-warning/60 text-warning"
+        : status === "false"
+          ? "border-destructive/60 text-destructive"
+          : "border-dashed text-muted-foreground";
+  return (
+    <Tag className={tone}>
+      {status === "confirmed" && <Check className="size-3" />}
+      {(status === "false" || status === "imprecise") && <TriangleAlert className="size-3" />}
+      {children}
+    </Tag>
+  );
+}
+
+// Flags sit slightly crooked, like notes slapped on the message.
+const TILTS = ["-rotate-1", "rotate-1", "-rotate-[0.5deg]", "rotate-[1.5deg]"];
 
 interface MessageItemProps {
   message: MessageView;
@@ -77,52 +104,52 @@ export function MessageItem({ message, name, canAct, onAsk, onRetry }: MessageIt
       transition={{ duration: 0.25 }}
       className={cn("flex w-full flex-col gap-1.5", right ? "items-end" : "items-start")}
     >
-      <header className={cn("flex items-center gap-2 px-1 text-xs text-muted-foreground", right && "flex-row-reverse")}>
+      <header className={cn("flex items-baseline gap-2 px-1 text-xs", right && "flex-row-reverse")}>
         <span className={cn("font-medium", sideText(message.seat))}>{name}</span>
-        <span>{t.feed.round(message.round)}</span>
+        <span className="text-muted-foreground">{t.feed.round(message.round)}</span>
       </header>
-
+      {/* The bubble: tinted in the side's colour, round except the corner that points at the name. */}
       <div
         className={cn(
-          "max-w-[min(100%,42rem)] rounded-2xl border px-4 py-3 text-[15px] leading-relaxed whitespace-pre-wrap",
-          message.seat === "a"
-            ? "rounded-tl-md border-side-a/30 bg-side-a/10"
-            : "rounded-tr-md border-side-b/30 bg-side-b/10",
+          "w-fit max-w-[min(100%,40rem)] rounded-2xl border",
+          message.seat === "a" ? "rounded-tl-sm border-side-a/30 bg-side-a/12" : "rounded-tr-sm border-side-b/30 bg-side-b/12",
         )}
       >
-        {segments(message.text, marks).map((run, index) =>
-          run.mark === null ? (
-            <span key={index}>{run.text}</span>
-          ) : run.mark.penalty === null ? (
-            <span key={index} className="excerpt-checked" title={t.feed.checked}>
-              {run.text}
-            </span>
-          ) : (
-            // A span, not a <button>: a button is an inline block and would not wrap with the sentence.
-            <span
-              key={index}
-              role="button"
-              tabIndex={0}
-              className="excerpt"
-              data-open={openPenalty === run.mark.penalty}
-              onClick={() => toggle(run.mark!.penalty!)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  toggle(run.mark!.penalty!);
-                }
-              }}
-            >
-              {run.text}
-            </span>
-          ),
-        )}
+        <p className="px-4 py-3 text-base leading-relaxed whitespace-pre-wrap sm:text-[17px]">
+          {segments(message.text, marks).map((run, index) =>
+            run.mark === null ? (
+              <span key={index}>{run.text}</span>
+            ) : run.mark.penalty === null ? (
+              <span key={index} className="excerpt-checked" title={t.feed.checked}>
+                {run.text}
+              </span>
+            ) : (
+              // A span, not a <button>: a button is an inline block and would not wrap with the sentence.
+              <span
+                key={index}
+                role="button"
+                tabIndex={0}
+                className="excerpt"
+                data-open={openPenalty === run.mark.penalty}
+                onClick={() => toggle(run.mark!.penalty!)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    toggle(run.mark!.penalty!);
+                  }
+                }}
+              >
+                {run.text}
+              </span>
+            ),
+          )}
+        </p>
       </div>
 
-      <div className={cn("flex w-full max-w-[min(100%,42rem)] flex-col gap-1.5 px-1 text-sm", right && "items-end text-right")}>
+      <div className={cn("flex w-full max-w-[min(100%,40rem)] flex-col gap-2 px-1 text-sm", right && "items-end text-right")}>
         {!judgement && !message.failed && (
-          <p className="flex items-center gap-1.5 text-muted-foreground">
-            <Scale className="size-3.5" />
+          <p className="flex items-center gap-2 text-muted-foreground">
+            <Deb mood="busy" className="size-4" />
             <span className="shimmer">{t.feed.judging}</span>
           </p>
         )}
@@ -131,7 +158,7 @@ export function MessageItem({ message, name, canAct, onAsk, onRetry }: MessageIt
           <p className="flex flex-wrap items-center gap-2 text-destructive">
             {message.failed === "budget" ? t.feed.judgeBudget : t.feed.judgeFailed}
             {canAct && message.failed !== "budget" && (
-              <button type="button" onClick={() => onRetry(message.id)} className="inline-flex items-center gap-1 underline underline-offset-2">
+              <button type="button" onClick={() => onRetry(message.id)} className="inline-flex items-center gap-1 underline underline-offset-4">
                 <RotateCw className="size-3.5" />
                 {t.feed.retry}
               </button>
@@ -145,12 +172,12 @@ export function MessageItem({ message, name, canAct, onAsk, onRetry }: MessageIt
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ type: "spring", stiffness: 380, damping: 26 }}
-              className={cn("flex flex-wrap items-center gap-x-2 gap-y-1", right && "flex-row-reverse")}
+              className={cn("flex flex-wrap items-center gap-x-3 gap-y-2", right && "flex-row-reverse")}
             >
-              <Scale className="size-4 text-bot" />
+              <Deb mood={score.manipulation ? "stern" : verdictMood(score.points)} className="size-5 text-bot" title={t.feed.points(score.points)} />
               {/* The formula with its numbers: points = rubric - penalties. */}
-              <span className="font-mono tabular-nums">
-                <span className={cn("text-base font-semibold", sideText(message.seat))}>{signed(score.points)}</span>
+              <span className="font-mono text-sm tabular-nums">
+                <span className={cn("font-semibold", sideMark(message.seat))}>{signed(score.points)}</span>
                 {!score.manipulation && score.penalty > 0 && (
                   <span className="text-muted-foreground">
                     {" = "}
@@ -166,72 +193,72 @@ export function MessageItem({ message, name, canAct, onAsk, onRetry }: MessageIt
                   onClick={() => toggle(index)}
                   aria-expanded={openPenalty === index}
                   className={cn(
-                    "rounded-full border border-warning/40 px-2 py-0.5 text-xs text-warning transition-colors hover:bg-warning/15",
-                    openPenalty === index && "bg-warning/15",
+                    "inline-flex items-center gap-1.5 border border-destructive/50 bg-background px-2 py-0.5 text-xs text-destructive transition-colors hover:bg-destructive/15",
+                    TILTS[index % TILTS.length],
+                    openPenalty === index && "bg-destructive/15",
                   )}
                 >
-                  {t.fallacies[penalty.type].name} {signed(-penalty.points)}
+                  <TriangleAlert className="size-3.5" />
+                  {t.fallacies[penalty.type].name}
+                  <span className="font-mono">{signed(-penalty.points)}</span>
                 </button>
               ))}
 
               {validation && (
-                <span className={cn("rounded-full border px-2 py-0.5 text-xs", statusTone(validation.status))}>
-                  {t.status[validation.status]} {validation.delta !== 0 && signed(validation.delta)}
-                </span>
-              )}
-
-              {message.engine === "mock" && (
-                <span className="rounded border border-border px-1 text-[10px] tracking-wide text-muted-foreground uppercase">
-                  {t.common.mock}
-                </span>
+                <StatusTag status={validation.status}>
+                  {t.status[validation.status]}
+                  {validation.delta !== 0 && <span className="font-mono">{signed(validation.delta)}</span>}
+                </StatusTag>
               )}
 
               <button
                 type="button"
                 onClick={() => setShowRubric((shown) => !shown)}
                 aria-expanded={showRubric}
-                className="inline-flex items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground"
+                aria-label={t.feed.rubric}
+                title={t.feed.rubric}
+                className="grid size-6 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
               >
-                {t.feed.rubric}
                 <ChevronDown className={cn("size-3.5 transition-transform", showRubric && "rotate-180")} />
               </button>
             </motion.div>
 
             {score.manipulation && (
-              <p className="flex items-center gap-1.5 text-destructive">
-                <ShieldAlert className="size-4" />
+              <p className="inline-flex -rotate-1 items-center gap-2 border border-destructive/50 bg-background px-3 py-1.5 text-destructive">
+                <TriangleAlert className="size-4" />
                 {t.feed.manipulation}
               </p>
             )}
 
-            {judgement.note && <p className="text-muted-foreground">{judgement.note}</p>}
+            {judgement.note && <p className="text-xs text-muted-foreground">{judgement.note}</p>}
 
             {opened && judgement && (
-              <div className="w-full rounded-xl border border-warning/30 bg-warning/5 p-3 text-left">
-                <p className="text-sm font-medium text-warning">
+              <div className="w-full border border-destructive/40 bg-background p-4 text-left">
+                <p className="eyebrow text-destructive">
                   {t.fallacies[opened.type].name}
-                  <span className="ml-2 font-normal text-muted-foreground">{t.feed.severity(opened.severity)}</span>
+                  <span className="ml-3 text-muted-foreground">{t.feed.severity(opened.severity)}</span>
                 </p>
-                <p className="mt-0.5 text-xs text-muted-foreground">{t.fallacies[opened.type].definition}</p>
-                <p className="mt-2 text-sm">{judgement.fallacies[opened.index].explanation}</p>
+                <p className="mt-2 text-sm text-muted-foreground">{t.fallacies[opened.type].definition}</p>
+                <p className="mt-2 text-[15px]">{judgement.fallacies[opened.index].explanation}</p>
               </div>
             )}
 
             {showRubric && (
-              <div className="grid w-full grid-cols-2 gap-x-4 gap-y-1.5 rounded-xl border border-border bg-card/60 p-3 text-left sm:grid-cols-4">
+              <div className="grid w-full grid-cols-2 gap-x-5 gap-y-3 border border-border bg-background p-4 text-left sm:grid-cols-4">
                 {QUALITY_KEYS.map((key) => {
                   const skipped = key === "rebuttal" && message.isOpening;
                   const value = judgement.quality[key];
                   return (
                     <div key={key}>
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>{t.quality[key]}</span>
-                        <span className="font-mono tabular-nums">{skipped ? t.feed.notApplicable : value}</span>
+                      <div className="flex items-baseline justify-between">
+                        <span className="eyebrow text-muted-foreground">{t.quality[key]}</span>
+                        <span className="font-mono text-sm tabular-nums">{skipped ? t.feed.notApplicable : value}</span>
                       </div>
-                      <div className="mt-1 h-1 overflow-hidden rounded-full bg-muted">
-                        {!skipped && (
-                          <div className={cn("h-full rounded-full", sideBg(message.seat))} style={{ width: `${value * 10}%` }} />
-                        )}
+                      {/* Ten cells, lit up to the rating. */}
+                      <div className="mt-1.5 flex gap-px">
+                        {Array.from({ length: 10 }, (_, cell) => (
+                          <span key={cell} className={cn("h-2 flex-1", !skipped && cell < value ? sideBg(message.seat) : "bg-muted")} />
+                        ))}
                       </div>
                     </div>
                   );
@@ -246,10 +273,10 @@ export function MessageItem({ message, name, canAct, onAsk, onRetry }: MessageIt
                 <button
                   type="button"
                   onClick={() => onAsk(message.id)}
-                  className="inline-flex items-center gap-0.5 rounded-full border border-bot/30 px-2 py-0.5 text-bot hover:bg-bot/10"
+                  className="inline-flex items-center gap-0.5 rounded-full border border-side-a/60 px-2.5 py-0.5 text-side-a hover:bg-side-a/15"
                 >
                   <AtSign className="size-3" />
-                  {MENTION.slice(1)}
+                  {BRAND.bot.handle}
                 </button>
               </p>
             )}
@@ -259,15 +286,3 @@ export function MessageItem({ message, name, canAct, onAsk, onRetry }: MessageIt
     </motion.article>
   );
 }
-
-export const sideText = (seat: Seat) => (seat === "a" ? "text-side-a" : "text-side-b");
-export const sideBg = (seat: Seat) => (seat === "a" ? "bg-side-a" : "bg-side-b");
-
-export function statusTone(status: "confirmed" | "imprecise" | "false" | "unverifiable") {
-  if (status === "confirmed") return "border-success/40 text-success";
-  if (status === "imprecise") return "border-warning/40 text-warning";
-  if (status === "false") return "border-destructive/50 text-destructive";
-  return "border-border text-muted-foreground";
-}
-
-export { signed };

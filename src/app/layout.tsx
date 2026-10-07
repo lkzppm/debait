@@ -1,9 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import { GeistMono } from "geist/font/mono";
-import { GeistSans } from "geist/font/sans";
+import { Inter } from "next/font/google";
 import LocaleProvider from "@/i18n/LocaleProvider";
 import { BRAND } from "@/lib/brand";
+import { THEME_SCRIPT } from "@/lib/use-theme";
 import "./globals.css";
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
   title: BRAND.name,
@@ -16,13 +19,20 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   interactiveWidget: "resizes-content",
-  themeColor: "#0b0b10",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f6f5fb" },
+    { media: "(prefers-color-scheme: dark)", color: "#07060e" },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    // `lang` follows the visitor's choice after hydration (LocaleProvider).
-    <html lang="pt-BR" className={`dark ${GeistSans.variable} ${GeistMono.variable} h-full antialiased`} suppressHydrationWarning>
+    // `lang` follows the visitor's choice after hydration (LocaleProvider), and
+    // the `dark` class is corrected before the first paint by the script below.
+    <html lang="pt-BR" className={`dark ${inter.variable} ${GeistMono.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="min-h-full font-sans">
         <LocaleProvider>{children}</LocaleProvider>
       </body>

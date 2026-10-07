@@ -10,6 +10,9 @@ export const pt: Dictionary = {
 
   common: {
     language: "Idioma",
+    pages: "Páginas",
+    themeLight: "Mudar para o tema claro",
+    themeDark: "Mudar para o tema escuro",
     source: "Código no GitHub",
     copy: "Copiar",
     copied: "Copiado",
@@ -41,28 +44,54 @@ export const pt: Dictionary = {
   },
 
   home: {
-    tagline: "Debata. Não morda a isca.",
-    lead: "Dois lados, um placar ao vivo. A Deb, a juíza de IA, pontua cada argumento na hora, mostra a conta e checa os fatos quando você chama.",
-    codeLabel: "Código da sala",
-    codePlaceholder: "6 letras",
-    enter: "Entrar na sala",
-    invalid: "O código da sala tem 6 letras.",
-    features: [
-      {
-        title: "Um placar que dá para conferir",
-        body: "Cada mensagem recebe seus pontos em segundos, com a fórmula na tela: quanto a rubrica deu, quanto cada falácia custou e as palavras exatas que causaram isso.",
+    brief: "Uma sala de debate com uma juíza de IA. A Deb pontua cada argumento na hora, mostra a conta e checa os fatos quando você chama @deb.",
+    poke: "Deb, a juíza. Cutuque para ver uma falta.",
+    create: "Criar sala",
+    join: "Entrar numa sala",
+    discover: "Como funciona",
+    demo: {
+      title: "Um debate, passo a passo",
+      chat: "Chat",
+      score: "Placar",
+      meter: "Medidor",
+      first: "Home office aumenta a produtividade: um estudo de Stanford mediu 13% a mais.",
+      second: ["", "Só preguiçoso", " defende isso."],
+      ask: "esse 13% é real?",
+      answer: "Um experimento de Stanford (Bloom et al., 2015) mediu um ganho de 13%.",
+      source: "Bloom et al., QJE 2015",
+      steps: {
+        argue: (name) => `${name} argumenta.`,
+        scored: (points) => `A Deb pontua: a rubrica dá ${points}.`,
+        attack: (name) => `${name} ataca a pessoa, não a ideia.`,
+        flagged: (fallacy, cost) => `A Deb marca a falta. ${fallacy} custa ${cost} pontos.`,
+        call: (name) => `${name} duvida do número e chama @deb.`,
+        checked: (delta, name) => `A Deb pesquisa na web. Confirmado: +${delta} para ${name}.`,
       },
-      {
-        title: "Chame a @deb",
-        body: "Duvidou de uma afirmação? Mencione a bot no chat. Ela pesquisa na web, responde com fontes, e o placar de quem fez a afirmação se mexe.",
-      },
-      {
-        title: "Melhor argumento, não razão",
-        body: "O medidor mostra quem está argumentando melhor, não quem está certo. A Deb julga a forma do argumento e nunca escolhe um lado.",
-      },
-    ],
+      note: "O medidor mostra quem está argumentando melhor, não quem está certo.",
+    },
+    facts: {
+      fallacies: { label: "falácias que a Deb marca", hint: "cada uma com a citação" },
+      criteria: { label: "critérios na rubrica", hint: "lógica, evidência, réplica, clareza" },
+      model: { label: "pontos dados pela IA", hint: "ela observa, o código faz a conta" },
+    },
     footer: "Um trabalho de disciplina da UFRJ, 2026.",
     admin: "Admin",
+  },
+
+  join: {
+    title: "Entrar numa sala",
+    lead: "Digite o código de uma sala que alguém criou. O link da sala também funciona.",
+    codeLabel: "Código da sala",
+    enter: "Entrar",
+    hint: "Seis letras, como mostrado por quem criou a sala. Colar também funciona.",
+    invalid: "O código da sala tem 6 letras.",
+  },
+
+  create: {
+    locked: "Criar uma sala exige a senha de admin: cada debate gasta a cota gratuita da Deb.",
+    yours: "Sua sala",
+    close: "Fechar sala",
+    chars: "caracteres por argumento",
   },
 
   notFound: {
@@ -84,7 +113,6 @@ export const pt: Dictionary = {
       gone: "Desconectado",
     },
     mockBanner: "Juiz de demonstração: não há chave da Groq, então estes pontos vêm de um mock.",
-    tabs: { debate: "Debate", score: "Placar" },
   },
 
   lobby: {
@@ -105,6 +133,7 @@ export const pt: Dictionary = {
 
   meter: {
     label: (a, b) => `Medidor: ${a}% contra ${b}%`,
+    side: (letter) => `Lado ${letter}`,
     provisional: "provisório",
     provisionalHint: "A rodada não terminou ou ainda há um julgamento pendente.",
     timeline: "O medidor ao longo do tempo",
@@ -145,6 +174,7 @@ export const pt: Dictionary = {
       off_topic: "Fora do assunto",
     },
     charged: "Usou um desafio",
+    state: { working: "trabalhando", done: "pronto", failed: "falhou" },
   },
 
   composer: {

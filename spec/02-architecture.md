@@ -13,7 +13,7 @@ Status on 2026-10-06: **scaffold built**. Everything in this file exists in the 
 | Realtime | **Server-Sent Events from our own route**, reading the room's event log from the store | No extra service; `EventSource` reconnects and resumes by itself (see below) |
 | Judge fallback | A **mock engine** behind the same interface as Groq | The whole UI works with no API key and spends no quota; clearly labelled on screen |
 | UI | Tailwind v4 + shadcn/ui (radix mode) | Same toolchain as CV-AI |
-| Visual | **vgpu** (WebGPU) + motion | The arena: the meter rendered as a full-screen shader, with a CSS fallback |
+| Visual | **vgpu** (WebGPU) + motion | The cubes: a pixel grid behind the page and the meter as a mosaic, with non-GPU fallbacks (`04-ui-design.md`) |
 | i18n | Typed dictionaries, no library | GraphMan's pattern |
 
 ## Core idea: an event log, one reducer, a ledger
@@ -104,11 +104,11 @@ POST mention {token, text, replyTo?} ─▶ postMention: seat, not busy, calls l
 - A deleted room sends a `gone` event (or a 404 on connect) and the page says so.
 - Cost on Upstash: about two commands per second per open tab. Fine for a class; watch the free quota if many spectators connect (limits not checked).
 
-## The admin panel
+## The admin pages
 
-`/admin`, guarded by `ADMIN_PASSWORD` (`src/lib/admin.ts`). Signing in sets an httpOnly cookie derived from the password with HMAC, compared in constant time; changing the password signs everyone out. With no password set, development falls back to `admin` and production refuses every login.
+Three pages (Lucas, 2026-10-06: "a homepage, a page to create rooms and another to enter, creating only with the admin password"): `/join` is public and only turns a code into `/r/{id}`; `/create` shows the password form until the cookie is set, then the creation form (`components/admin/create-form.tsx`); `/admin` is the panel for what runs and what it spends. Both protected pages are guarded by `ADMIN_PASSWORD` (`src/lib/admin.ts`). Signing in sets an httpOnly cookie derived from the password with HMAC, compared in constant time; changing the password signs everyone out. With no password set, development falls back to `admin` and production refuses every login.
 
-It is the only way to create a debate, and it can stop or delete one. It shows which judge engine and which store are active, and **spending**: tokens and requests today per model against Groq's free-tier limits (`src/lib/usage.ts`), plus tokens per debate. Every model call goes through `checkBudget` (refuses at 90% of the daily tokens) and `addUsage`. "Today" is a UTC calendar day; Groq's window may be rolling.
+`/create` is the only way to create a debate; the panel can stop or delete one. It shows which judge engine and which store are active, and **spending**: tokens and requests today per model against Groq's free-tier limits (`src/lib/usage.ts`), plus tokens per debate. Every model call goes through `checkBudget` (refuses at 90% of the daily tokens) and `addUsage`. "Today" is a UTC calendar day; Groq's window may be rolling.
 
 ## Identity and trust
 
@@ -128,9 +128,12 @@ It is the only way to create a debate, and it can stop or delete one. It shows w
 ```
 src/
   app/
-    page.tsx · not-found.tsx · layout.tsx · globals.css · icon.svg
+    layout.tsx · not-found.tsx · globals.css · icon.svg
+    (site)/                        layout (the top bar) · template (fade-in on navigation) · page.tsx
     r/[id]/page.tsx                room (server: loads the room, 404 if missing)
-    admin/page.tsx                 login or panel
+    (site)/create/page.tsx         login, then the creation form (admin password)
+    (site)/join/page.tsx           enter a room by its code
+    (site)/admin/page.tsx          login or panel
     api/rooms/[id]/{events,join,messages,mention,judge}/route.ts
     api/admin/{login,rooms,rooms/[id],rooms/[id]/stop}/route.ts
   judge/
@@ -140,17 +143,17 @@ src/
     schema.ts · models.ts · errors.ts
     prompts/{en,pt,shared,index}.ts
   lib/
-    brand.ts                       project and bot names, mention detection, side colours
+    brand.ts                       project and bot names, mention detection
     debate/{types,scoring,reducer,quote,limits,run}.ts
     store/{kv,memory,upstash,index}.ts
     rooms.ts · usage.ts · admin.ts · http.ts          (server)
-    api.ts · identity.ts · use-room-events.ts · use-origin.ts   (browser)
+    api.ts · identity.ts · use-room-events.ts · use-origin.ts · use-theme.ts   (browser)
   i18n/                            index.ts · locales.ts · fallacies.ts · en.tsx · pt.tsx · LocaleProvider.tsx
   components/
-    arena/                         arena.wgsl · arena.ts · arena-canvas.tsx
+    cubes/                         cubes.wgsl · cubes.ts · cubes-canvas.tsx   (the vgpu grid and mosaics)
     room/                          room · lobby · meter · message-item · ask-item · composer · score-panel · result
-    admin/admin.tsx
-    site/                          home · logo · locale-switch · copy-button · not-found
+    admin/                         admin (the panel) · login · create-form
+    site/                          home · join · create · nav · hero-mark · demo · logo · brand-icon · deb · pill · locale-switch · theme-switch · copy-button · not-found
     ui/                            shadcn components (generated; re-add with the CLI)
 scripts/                           judge.mts · mention.mts · sample.mts
 ```

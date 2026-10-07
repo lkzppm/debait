@@ -41,7 +41,7 @@ jobs:
         run: pnpm typecheck
 
       - name: Shader
-        run: pnpm exec vgpu check src/components/arena/arena.wgsl
+        run: pnpm exec vgpu check src/components/cubes/cubes.wgsl
 
       - name: Build
         run: pnpm build

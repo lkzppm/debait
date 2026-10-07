@@ -1,10 +1,10 @@
 "use client";
 
+import { ArrowRight } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useState } from "react";
 import { CopyButton } from "@/components/site/copy-button";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Pill } from "@/components/site/pill";
 import { useT } from "@/i18n/LocaleProvider";
 import { api, type ClientError } from "@/lib/api";
 import { SEATS, type DebateState, type RoomMeta, type Seat } from "@/lib/debate/types";
@@ -41,75 +41,72 @@ export function Lobby({ meta, state, identity, onJoined }: LobbyProps) {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
-      <section className="panel rounded-3xl p-5 sm:p-6">
-        <h2 className="text-lg font-semibold">{identity ? t.lobby.waitingOpponent : t.lobby.title}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{t.lobby.format(meta.format.rounds, meta.format.challenges)}</p>
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 py-4">
+      <section className="px-1 text-center">
+        <p className="eyebrow text-side-a">{identity ? t.lobby.waitingOpponent : t.lobby.title}</p>
+        <h2 className="headline mt-4 text-4xl leading-tight font-medium tracking-tight text-balance sm:text-6xl">{meta.motion}</h2>
+        <p className="mt-4 text-muted-foreground">{t.lobby.format(meta.format.rounds, meta.format.challenges)}</p>
+      </section>
 
-        {!identity && (
-          <label className="mt-4 block text-sm">
-            <span className="text-muted-foreground">{t.lobby.nameLabel}</span>
-            <Input
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder={t.lobby.namePlaceholder}
-              maxLength={24}
-              autoComplete="nickname"
-              className="mt-1 h-10 text-base"
-            />
-          </label>
-        )}
+      {!identity && (
+        <label className="mx-auto mt-4 block w-full max-w-sm text-center">
+          <span className="eyebrow text-muted-foreground">{t.lobby.nameLabel}</span>
+          <input
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            placeholder={t.lobby.namePlaceholder}
+            maxLength={24}
+            autoComplete="nickname"
+            className="mt-2 h-12 w-full rounded-full border border-input bg-popover px-6 text-center text-base outline-none focus-visible:border-side-a"
+          />
+        </label>
+      )}
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {SEATS.map((seat) => {
-            const occupant = state.seats[seat];
-            const mine = identity?.seat === seat;
-            return (
-              <div
-                key={seat}
-                className={cn(
-                  "rounded-2xl border p-4",
-                  seat === "a" ? "border-side-a/30 bg-side-a/5" : "border-side-b/30 bg-side-b/5",
-                )}
-              >
-                <p className={cn("text-base font-semibold", sideText(seat))}>{meta.stances[seat]}</p>
+      <div className="mt-2 grid gap-4 sm:grid-cols-2">
+        {SEATS.map((seat) => {
+          const occupant = state.seats[seat];
+          const mine = identity?.seat === seat;
+          return (
+            <section key={seat} className={cn("border border-t-2 border-border bg-card p-6", seat === "a" ? "border-t-side-a" : "border-t-side-b")}>
+              <p className={cn("eyebrow", sideText(seat))}>{t.meter.side(seat.toUpperCase())}</p>
+              <p className="mt-2 text-2xl font-medium tracking-tight sm:text-3xl">{meta.stances[seat]}</p>
+              <div className="mt-6 flex min-h-10 items-center">
                 {occupant ? (
-                  <p className="mt-2 text-sm">
-                    {occupant.name}
-                    {mine && <span className="text-muted-foreground"> ({t.room.you})</span>}
+                  <p className="text-lg">
+                    <span className={seat === "a" ? "mark-a" : "mark-b"}>{occupant.name}</span>
+                    {mine && <span className="ml-2 text-sm text-muted-foreground">({t.room.you})</span>}
                   </p>
                 ) : identity ? (
-                  <p className="mt-2 text-sm text-muted-foreground">{t.lobby.open}</p>
+                  <p className="text-muted-foreground">{t.lobby.open}</p>
                 ) : (
-                  <Button
+                  <Pill
                     type="button"
-                    variant="secondary"
-                    className="mt-3 h-9 w-full"
+                    variant={seat === "a" ? "primary" : "green"}
+                    className="w-full"
                     disabled={!name.trim() || joining !== null}
                     onClick={() => join(seat)}
                   >
                     {t.lobby.join(meta.stances[seat])}
-                  </Button>
+                    <ArrowRight />
+                  </Pill>
                 )}
               </div>
-            );
-          })}
-        </div>
+            </section>
+          );
+        })}
+      </div>
 
-        {error && <p className="mt-3 text-sm text-destructive">{t.errors[error]}</p>}
-      </section>
+      {error && <p className="text-center text-sm text-destructive">{t.errors[error]}</p>}
 
-      <section className="panel flex flex-col items-center gap-5 rounded-3xl p-5 sm:flex-row sm:items-start sm:p-6">
-        <div className="rounded-2xl bg-white p-3">
-          {link ? <QRCodeSVG value={link} size={148} marginSize={0} /> : <div className="size-[148px]" />}
-        </div>
+      <section className="panel flex flex-col items-center gap-6 p-6 sm:flex-row sm:items-center">
+        <div className="bg-white p-3">{link ? <QRCodeSVG value={link} size={140} marginSize={0} /> : <div className="size-[140px]" />}</div>
         <div className="min-w-0 flex-1 text-center sm:text-left">
-          <h2 className="text-lg font-semibold">{t.lobby.inviteTitle}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{t.lobby.inviteHint}</p>
-          <p className="mt-4 text-xs tracking-wider text-muted-foreground uppercase">{t.lobby.code}</p>
-          <p className="font-mono text-3xl font-semibold tracking-[0.25em] uppercase">{meta.id}</p>
-          <div className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-            <code className="max-w-full truncate rounded-lg bg-muted px-2 py-1 text-xs text-muted-foreground">{link}</code>
+          <p className="eyebrow text-side-a">{t.lobby.inviteTitle}</p>
+          <p className="mt-2 text-muted-foreground">{t.lobby.inviteHint}</p>
+          <p className="eyebrow mt-5 text-muted-foreground">{t.lobby.code}</p>
+          <p className="font-mono text-4xl tracking-[0.3em] uppercase sm:text-5xl">{meta.id}</p>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3 sm:justify-start">
+            <code className="max-w-full truncate font-mono text-xs text-muted-foreground">{link}</code>
             <CopyButton value={link} label={t.lobby.copyLink} />
           </div>
         </div>

@@ -11,7 +11,7 @@ A UFRJ course project (2026): "create a chatbot on a theme of your own".
 1. **The score is computed and shown in real time, with the math visible.** Each message gets a ledger entry within seconds: `62 = 78 − 16 (straw man)`. The model only observes (rubric ratings, fallacies, claims); the points, the meter and the winner are computed in code ([`src/lib/debate/scoring.ts`](src/lib/debate/scoring.ts)).
 2. **The bot can be summoned.** A debater writes `@deb` to have a claim validated or something searched. The answer arrives in the room with sources, and a validation moves the score of whoever made the claim. Each debater has a few challenges, like calling for a review.
 
-Also: Portuguese and English interface with a switch, no accounts (a link or QR code and a name), prompt-injection attempts are flagged and score zero, and a WebGPU arena ([vgpu](https://github.com/vercel-labs/vgpu)) where the two sides push against each other behind the chat.
+Also: Portuguese and English interface with a switch, a light and a dark theme, no accounts (a link or QR code and a name), prompt-injection attempts are flagged and score zero, and a pixel grid rendered with WebGPU ([vgpu](https://github.com/vercel-labs/vgpu)) whose cells the two sides, neon purple and aqua, fight over behind the chat.
 
 ## How it works
 
@@ -25,7 +25,7 @@ browsers run reduce(room, events) ── the same reducer the server uses ──
 
 - A room is an append-only event log. Everything on screen is derived from it by one pure reducer shared by server and browser ([`src/lib/debate/reducer.ts`](src/lib/debate/reducer.ts)), so two phones, a spectator and a projector always agree.
 - The judge runs on [Groq](https://groq.com) through the Vercel AI SDK: one structured call per message, one or two calls per `@deb` mention (Groq's built-in `browser_search`), one for the closing ruling. Prompts exist in both languages ([`src/judge/prompts`](src/judge/prompts)).
-- Debates are created only from a password-protected `/admin`, which also shows tokens spent per model against Groq's free-tier limits.
+- Debates are created only on `/create`, behind an admin password; anyone with the code enters on `/join`. `/admin` (same password) lists the debates, stops or deletes them, and shows tokens spent per model against Groq's free-tier limits.
 
 ## Run it
 
@@ -46,7 +46,7 @@ To use the real judge, copy `.env.example` to `.env.local` and fill in:
 | `GROQ_JUDGE_MODEL`, `GROQ_MENTION_MODEL` | Default `openai/gpt-oss-120b` and `openai/gpt-oss-20b`. Two models on purpose: Groq's limits are per model. |
 | `JUDGE_ENGINE` | Set to `mock` to force the mock judge even with a key. |
 | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis. Required on Vercel (serverless instances do not share memory); optional locally. |
-| `ADMIN_PASSWORD` | Password for `/admin`. Required in production. |
+| `ADMIN_PASSWORD` | Password for `/create` and `/admin`. Required in production. |
 
 Useful commands:
 

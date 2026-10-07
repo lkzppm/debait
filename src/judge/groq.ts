@@ -2,7 +2,7 @@ import { APICallError, generateText, Output, type LanguageModel, type LanguageMo
 import type { BotReply, Judgement, Ruling } from "@/lib/debate/types";
 import { addUsage, BudgetError, checkBudget } from "@/lib/usage";
 import { JudgeError } from "./errors";
-import { groq, JUDGE_MODEL_ID, judgeModel, MENTION_MODEL_ID, mentionModel } from "./models";
+import { groq, JUDGE_MODEL_ID, judgeModel, MENTION_MODEL_ID, mentionModel, mentionModelWithTrace } from "./models";
 import { aliasMessages, prompts } from "./prompts";
 import { judgementSchema, mentionSchema, rulingSchema, type MentionOutput } from "./schema";
 import type { EngineResult, JudgeEngine, JudgeInput, MentionInput, RulingInput, TranscriptLine } from "./types";
@@ -129,8 +129,10 @@ async function answerMention(input: MentionInput): Promise<EngineResult<BotReply
   }
 
   // Step 1: free text with Groq's built-in web search. The 20b searches well but, in
-  // CV-AI's tests, could not also produce the final JSON in the same call.
-  const searchOptions = { ...base, instructions: p.mentionSearchSystem(input), prompt: user, maxOutputTokens: 1400 };
+  // CV-AI's tests, could not also produce the final JSON in the same call. The
+  // pages it saw come from the raw response (the provider drops them).
+  const traced = mentionModelWithTrace();
+  const searchOptions = { ...base, model: traced.model, instructions: p.mentionSearchSystem(input), prompt: user, maxOutputTokens: 1400 };
   const search = await tracked(searchOptions, () =>
     generateText({
       model: searchOptions.model,
@@ -143,16 +145,25 @@ async function answerMention(input: MentionInput): Promise<EngineResult<BotReply
       providerOptions: PROVIDER_OPTIONS,
     }),
   );
-  const opened = search.sources
-    .filter((source): source is Extract<typeof source, { sourceType: "url" }> => source.sourceType === "url")
-    .map((source) => ({ title: source.title ?? source.url, url: source.url }));
+  const trace = await traced.trace();
+  // The answer cites results by number (【3†L11-L15】): those pages, plus the ones
+  // the model opened, are its sources; failing both, the first results found.
+  const cited = [...search.text.matchAll(/【(\d+)†/g)].map((match) => trace.results[Number(match[1])]).filter((hit) => hit !== undefined);
+  const seen = new Set<string>();
+  const opened = [...trace.opened, ...cited, ...(trace.opened.length + cited.length > 0 ? [] : trace.results.slice(0, 3))].filter(
+    (hit) => !seen.has(hit.url) && seen.add(hit.url),
+  );
+  const answer = search.text.replace(/【[^】]*】/g, "").replace(/[ \t]+\n/g, "\n").trim();
+  if (process.env.JUDGE_DEBUG) {
+    console.error("[groq] search step", { finishReason: search.finishReason, found: trace.results.length, opened: trace.opened.length, cited: cited.length, sources: opened, text: answer });
+  }
 
   // Step 2: a small structured call that only sorts that answer into fields.
   const output = await structured(
     {
       ...base,
       instructions: p.classifySystem(lines.map((line) => line.alias)),
-      prompt: p.classifyUser(search.text, opened.map((source) => source.url)),
+      prompt: p.classifyUser(answer, opened.map((source) => source.url)),
       maxOutputTokens: 900,
     },
     mentionSchema,

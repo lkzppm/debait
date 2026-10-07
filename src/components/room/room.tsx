@@ -1,10 +1,13 @@
 "use client";
 
+import { ArrowLeft, Receipt, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArenaCanvas } from "@/components/arena/arena-canvas";
+import { CubesField } from "@/components/cubes/cubes-canvas";
 import { LocaleSwitch } from "@/components/site/locale-switch";
+import { ThemeSwitch } from "@/components/site/theme-switch";
 import { Logo } from "@/components/site/logo";
+import { Pill, Tag } from "@/components/site/pill";
 import { useT } from "@/i18n/LocaleProvider";
 import { api } from "@/lib/api";
 import { MENTION, mentionsBot } from "@/lib/brand";
@@ -23,7 +26,7 @@ import { ScorePanel } from "./score-panel";
 
 const CONNECTION_TONE: Record<Connection, string> = {
   connecting: "bg-muted-foreground",
-  open: "bg-success",
+  open: "bg-side-b",
   reconnecting: "bg-warning",
   gone: "bg-destructive",
 };
@@ -40,7 +43,8 @@ export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
   const [identity, setIdentity] = useIdentity(meta.id);
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<string | null>(null);
-  const [tab, setTab] = useState<"debate" | "score">("debate");
+  // The ledger panel is closed until asked for, on every screen size.
+  const [panelOpen, setPanelOpen] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const feedRef = useRef<HTMLDivElement>(null);
 
@@ -51,10 +55,10 @@ export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
   const live = state.status === "live";
   const canAct = identity !== null && live;
 
-  // What the arena reacts to: each ledger entry is an impact, each counted
+  // What the cubes react to: each ledger entry is an impact, each counted
   // fallacy or manipulation attempt a glitch.
   const lastEntry = state.ledger.at(-1);
-  const pulseDir = lastEntry ? ((lastEntry.seat === "a") === lastEntry.delta >= 0 ? 1 : -1) : 1;
+  const pulseDir: 1 | -1 = lastEntry && (lastEntry.seat === "a") !== lastEntry.delta >= 0 ? -1 : 1;
   const glitch = state.messages.reduce(
     (count, message) => count + (message.score ? message.score.penalties.length + (message.score.manipulation ? 1 : 0) : 0),
     0,
@@ -73,7 +77,7 @@ export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
   const askAbout = useCallback((messageId: string) => {
     setReplyTo(messageId);
     setText((current) => (mentionsBot(current) ? current : `${MENTION} ${current}`));
-    setTab("debate");
+    setPanelOpen(false);
     inputRef.current?.focus();
   }, []);
 
@@ -88,48 +92,65 @@ export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
 
   return (
     <div className="relative flex h-dvh flex-col overflow-hidden">
-      <ArenaCanvas
+      <CubesField
         className="fixed"
         share={state.share}
         pulse={state.ledger.length}
         pulseDir={pulseDir}
         glitch={glitch}
         provisional={state.provisional}
-        intensity={0.5}
+        intensity={0.2}
       />
 
       <div className="relative z-10 mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col gap-3 p-3 sm:p-4">
-        <header className="flex items-center gap-3">
-          <Logo label={t.common.home} className="text-xl" />
+        <header className="flex h-14 shrink-0 items-center gap-4 border border-border bg-popover/95 px-4">
+          <Logo label={t.common.home} className="text-xl sm:text-2xl" />
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-sm font-medium sm:text-base" title={meta.motion}>
+            <h1 className="truncate text-sm sm:text-base" title={meta.motion}>
               {meta.motion}
             </h1>
-            <p className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span className={cn("size-1.5 rounded-full", CONNECTION_TONE[connection])} />
-              <span>
+            <p className="eyebrow flex items-center gap-2 text-muted-foreground">
+              <span className={cn("size-1.5", CONNECTION_TONE[connection])} />
+              <span className="truncate">
                 {connection === "open" ? t.roomStatus[state.status] : t.room.connection[connection]}
                 {live && ` · ${t.room.round(state.round, meta.format.rounds)}`}
                 {live && !identity && ` · ${t.room.watching}`}
               </span>
             </p>
           </div>
+          {mock && (
+            <Tag className="border-warning/50 text-warning" title={t.room.mockBanner}>
+              {t.common.mock}
+            </Tag>
+          )}
+          {state.status !== "lobby" && (
+            <Pill
+              type="button"
+              variant={panelOpen ? "primary" : "outline"}
+              size="sm"
+              onClick={() => setPanelOpen((open) => !open)}
+              aria-expanded={panelOpen}
+              aria-controls="ledger-panel"
+            >
+              {panelOpen ? <X /> : <Receipt />}
+              <span className="hidden sm:inline">{t.panel.ledger}</span>
+              {state.ledger.length > 0 && <span className="font-mono tabular-nums">{state.ledger.length}</span>}
+            </Pill>
+          )}
           <LocaleSwitch />
+          <ThemeSwitch />
         </header>
 
-        {mock && (
-          <p className="rounded-lg border border-warning/30 bg-warning/10 px-3 py-1.5 text-center text-xs text-warning">
-            {t.room.mockBanner}
-          </p>
-        )}
-
         {connection === "gone" && events.length === 0 ? (
-          <div className="panel m-auto max-w-md rounded-3xl p-6 text-center">
-            <h2 className="text-lg font-semibold">{t.gone.title}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{t.gone.body}</p>
-            <Link href="/" className="mt-4 inline-block text-sm underline underline-offset-4">
-              {t.notFound.back}
-            </Link>
+          <div className="panel m-auto max-w-md p-8 text-center">
+            <h2 className="text-3xl font-medium tracking-tight">{t.gone.title}</h2>
+            <p className="mt-2 text-muted-foreground">{t.gone.body}</p>
+            <Pill asChild variant="outline" className="mt-6">
+              <Link href="/">
+                <ArrowLeft />
+                {t.notFound.back}
+              </Link>
+            </Pill>
           </div>
         ) : !ready ? (
           <p className="shimmer m-auto text-sm">{t.common.loading}</p>
@@ -139,31 +160,14 @@ export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
           </div>
         ) : (
           <>
-            <Meter meta={meta} state={state} names={names} />
-
-            {/* Below lg the score panel is a second tab instead of a column. */}
-            <div className="panel flex rounded-full p-0.5 text-sm lg:hidden">
-              {(["debate", "score"] as const).map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => setTab(option)}
-                  className={cn(
-                    "flex-1 rounded-full py-1.5 transition-colors",
-                    tab === option ? "bg-foreground text-background" : "text-muted-foreground",
-                  )}
-                >
-                  {t.room.tabs[option]}
-                  {option === "score" && state.ledger.length > 0 && ` (${state.ledger.length})`}
-                </button>
-              ))}
-            </div>
+            <Meter meta={meta} state={state} names={names} pulse={state.ledger.length} pulseDir={pulseDir} glitch={glitch} />
 
             <div className="flex min-h-0 flex-1 gap-3">
-              <main className={cn("min-h-0 min-w-0 flex-1 flex-col gap-3", tab === "debate" ? "flex" : "hidden lg:flex")}>
-                <div ref={feedRef} className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto scrollbar-none pb-2">
+              {/* Open, the panel is a column beside the feed from lg up and takes the feed's place below it. */}
+              <main className={cn("min-h-0 min-w-0 flex-1 flex-col gap-3", panelOpen ? "hidden lg:flex" : "flex")}>
+                <div ref={feedRef} className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto scrollbar-none pb-2">
                   {state.timeline.length === 0 && live && (
-                    <p className="m-auto text-sm text-muted-foreground">{t.feed.opens(names.a)}</p>
+                    <p className="m-auto text-lg text-muted-foreground">{t.feed.opens(names.a)}</p>
                   )}
                   {state.timeline.map((item) =>
                     item.kind === "message" ? (
@@ -192,7 +196,7 @@ export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
                 </div>
 
                 {state.status === "finished" ? (
-                  <p className="panel rounded-2xl p-3 text-center text-sm text-muted-foreground">{t.composer.finished}</p>
+                  <p className="panel p-3 text-center text-sm text-muted-foreground">{t.composer.finished}</p>
                 ) : identity ? (
                   <Composer
                     meta={meta}
@@ -206,15 +210,13 @@ export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
                     inputRef={inputRef}
                   />
                 ) : (
-                  <p className="panel rounded-2xl p-3 text-center text-sm text-muted-foreground">{t.composer.spectator}</p>
+                  <p className="panel p-3 text-center text-sm text-muted-foreground">{t.composer.spectator}</p>
                 )}
               </main>
 
               <aside
-                className={cn(
-                  "panel min-h-0 w-full overflow-y-auto rounded-2xl p-4 scrollbar-none lg:block lg:w-80 lg:shrink-0",
-                  tab === "score" ? "block" : "hidden",
-                )}
+                id="ledger-panel"
+                className={cn("panel min-h-0 w-full overflow-y-auto p-5 scrollbar-none lg:w-80 lg:shrink-0", panelOpen ? "block" : "hidden")}
               >
                 <ScorePanel meta={meta} state={state} names={names} />
               </aside>
