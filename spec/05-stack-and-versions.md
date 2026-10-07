@@ -51,12 +51,14 @@ pnpm exec vgpu check src/components/cubes/cubes.wgsl
 
 Local walkthrough: `/admin` (password `admin`), create a debate, open its link in two browser windows (or one normal and one private window, since the seat lives in localStorage), join one side in each.
 
-## Deploying (not done yet)
+## Deployment (done 2026-10-06)
 
-1. Vercel: import `lkzppm/debait`; production tracks `main`.
-2. Add Upstash Redis from the Vercel Marketplace (injects the Redis variables).
-3. Set `GROQ_API_KEY` and `ADMIN_PASSWORD` for production and preview.
-4. First checks on the deployment: the admin panel must say "Upstash Redis" and "Groq"; run one debate between two phones; watch whether the event stream survives its 240-second recycle.
+- **Production: https://debait-pi.vercel.app** (`debait.vercel.app` belongs to someone else). Vercel project `debait` (`prj_ppdfvnOv2Tot6eCge1AN9FCZ4HlL`) on the team `lucas-pachecos-projects-68b6e0dc` (`team_N5HjNeQxCADT6qTNcLaDWLSm`), linked to `lkzppm/debait`; production tracks `main`, every pull request gets a preview.
+- **Redis**: Upstash for Redis from the Marketplace, resource `debait-redis` (free plan, product `upstash/upstash-kv`), connected to production, preview and development; it injects `KV_REST_API_URL` / `KV_REST_API_TOKEN` (plus `REDIS_URL`, `KV_URL`), which `src/lib/store/index.ts` already accepts.
+- **Env vars** on production and preview: `GROQ_API_KEY`, `GROQ_JUDGE_MODEL`, `GROQ_MENTION_MODEL`, `ADMIN_PASSWORD` (generated on 2026-10-06 and given to Lucas; change it in the Vercel dashboard, Settings, Environment Variables).
+- **First checks passed** on the deployment: `/`, `/join`, `/create`, `/admin` answer 200, an unknown room 404, a wrong password 401, and the admin API reports store `upstash` and engine `groq`. Not yet done on the deployment: a debate between two phones, and watching the event stream survive its 240-second recycle.
+- **How it was done**: the Vercel CLI (`vercel project add`, `vercel link`, `vercel git connect`, `vercel env add`, `vercel integration add upstash/upstash-kv --plan free`, a `POST /v13/deployments` with `gitSource` to deploy `main`). The Vercel MCP connection is read-only on this team (403 on create), so the CLI is the tool for changes. `vercel integration add` also drops `.agents/`, `.claude/` and `skills-lock.json` into the folder: delete them.
+- **CI/CD**: GitHub Actions (`.github/workflows/ci.yml`: lint, typecheck, `vgpu check`, build) runs on pushes and pull requests to `main` and `dev`. A repository ruleset on `main` requires a pull request and the `lint · types · build` check, and blocks deletion and force pushes; auto-merge and delete-branch-on-merge are on, so `/merge` arms auto-merge and the merge lands when CI is green. Vercel then builds `main` for production.
 
 ## Lessons inherited from CV-AI (all observed there between 2026-10-03 and 2026-10-06)
 
