@@ -5,18 +5,21 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ------------------------------------------------------------------
-   Debait: near-black stage, two side colours, a neutral bot.
-   Side A is cyan and side B is orange on purpose: red vs blue (or
-   green/yellow vs red) read as political parties in Brazil, and this
-   pair also differs in lightness, so it survives colour blindness.
-   Dark only: the app lives on a projector.
+   Debait: a page with a thin pixel grid, light type, and two colours
+   that fight for the cells. Side A is neon purple, side B is aqua (never
+   red vs blue or green/yellow vs red, which read as political parties
+   in Brazil). Cards have square corners and hairline borders; buttons
+   and tags are pills. Two themes: paper (`:root`) and night (`.dark`,
+   set on <html> before the first paint, see `src/lib/use-theme.ts`).
+   The cubes shader reads --side-a, --side-b, --background and
+   --foreground at runtime: keep those four as 6-digit hex.
    ------------------------------------------------------------------ */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-geist-sans);
+  --font-heading: var(--font-inter);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -36,8 +39,12 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-side-a: var(--side-a);
+  --color-side-a-deep: var(--side-a-deep);
   --color-side-b: var(--side-b);
+  --color-side-b-deep: var(--side-b-deep);
+  --color-ink: var(--ink);
   --color-bot: var(--bot);
+  --color-bow: var(--bow);
   --color-panel: var(--panel);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -50,61 +57,102 @@
 }
 
 :root {
-  --side-a: #38bdf8;
-  --side-b: #fb923c;
-  --bot: #e8e6f0;
+  color-scheme: light;
 
-  --background: #0b0b10;
-  --foreground: #ecebf2;
-  --card: #15141c;
-  --card-foreground: #ecebf2;
-  --popover: #1b1a22;
-  --popover-foreground: #ecebf2;
-  --primary: #ecebf2;
-  --primary-foreground: #0b0b10;
-  --secondary: #23222c;
-  --secondary-foreground: #dcdbe6;
-  --muted: #1b1a22;
-  --muted-foreground: #9c9aab;
-  --accent: rgba(255, 255, 255, 0.07);
-  --accent-foreground: #ecebf2;
-  --destructive: #f43f5e;
-  --success: #34d399;
-  --warning: #facc15;
-  --border: rgba(255, 255, 255, 0.09);
-  --input: rgba(255, 255, 255, 0.12);
-  --ring: #8f8da3;
-  --panel: rgba(17, 16, 23, 0.78);
-  --radius: 0.875rem;
+  --side-a: #9b3dff;
+  --side-a-deep: #7f22e0;
+  --side-b: #0aa896;
+  --side-b-deep: #088c7d;
+  /* What the big Deb's cells darken towards: on paper a deep tone, never the page. */
+  --side-a-shade: #4a148c;
+  --side-b-shade: #065a50;
+  /* Text on top of either side colour, and on --bot. */
+  --ink: #ffffff;
+  --bot: #121020;
+  /* Deb's bow: pink, on no side. */
+  --bow: #e0369a;
+
+  --background: #f6f5fb;
+  --foreground: #121020;
+  --card: #ffffff;
+  --card-foreground: #121020;
+  --popover: #ffffff;
+  --popover-foreground: #121020;
+  --primary: #9b3dff;
+  --primary-foreground: #ffffff;
+  --secondary: #e9e7f3;
+  --secondary-foreground: #121020;
+  --muted: #e9e7f3;
+  --muted-foreground: #5f5b72;
+  --accent: rgba(18, 16, 32, 0.06);
+  --accent-foreground: #121020;
+  --destructive: #d9304a;
+  --success: #0aa896;
+  --warning: #9a5b00;
+  --border: rgba(18, 16, 32, 0.12);
+  --input: rgba(18, 16, 32, 0.24);
+  --ring: #9b3dff;
+  --panel: rgba(255, 255, 255, 0.94);
+  --radius: 0.25rem;
+  /* For the keyframe animations below (utilities use `ease-out-expo`). */
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark {
+  color-scheme: dark;
+
+  --side-a: #b44dff;
+  --side-a-deep: #9a2bf0;
+  --side-b: #2ee6d6;
+  --side-b-deep: #12c4b4;
+  --side-a-shade: #07060e;
+  --side-b-shade: #07060e;
+  --ink: #07060e;
+  --bot: #eceaf6;
+  --bow: #ff6fb5;
+
+  --background: #07060e;
+  --foreground: #eceaf6;
+  --card: #100e1c;
+  --card-foreground: #eceaf6;
+  --popover: #0c0a17;
+  --popover-foreground: #eceaf6;
+  --primary: #b44dff;
+  --primary-foreground: #07060e;
+  --secondary: #1b1829;
+  --secondary-foreground: #eceaf6;
+  --muted: #1b1829;
+  --muted-foreground: #9893ad;
+  --accent: rgba(236, 234, 246, 0.08);
+  --accent-foreground: #eceaf6;
+  --destructive: #ff5c7a;
+  --success: #2ee6d6;
+  --warning: #ffc957;
+  --border: rgba(236, 234, 246, 0.12);
+  --input: rgba(236, 234, 246, 0.2);
+  --ring: #b44dff;
+  --panel: rgba(16, 14, 28, 0.94);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-  html {
-    color-scheme: dark;
-  }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "cv11", "ss01";
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    background: var(--side-a);
+    color: var(--ink);
   }
 }
 
-/* Surface that sits over the arena: dark enough to read on, light enough to let the colours through. */
+/* A card over the grid: flat, square, hairline border. */
 @utility panel {
   background: var(--panel);
   border: 1px solid var(--border);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-}
-
-/* Full-screen blur over an animated background is expensive on phones. */
-@media (max-width: 1023px) {
-  .panel {
-    background: rgba(17, 16, 23, 0.94);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-  }
 }
 
 @utility scrollbar-none {
@@ -112,6 +160,42 @@
   &::-webkit-scrollbar {
     display: none;
   }
+}
+
+/* Small capitals above a title: "THE PROBLEM", "01 — LIVE SCORE". */
+@utility eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* Marker pen: a sentence or a number on a solid block of a side colour. */
+.mark-a,
+.mark-b,
+.mark-bot {
+  color: var(--ink);
+  padding: 0.05em 0.35em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.mark-a {
+  background: var(--side-a);
+}
+.mark-b {
+  background: var(--side-b);
+}
+.mark-bot {
+  background: var(--bot);
+}
+
+/* The accent inside a headline: italic with a coloured underline. */
+.headline em {
+  font-style: italic;
+  text-decoration: underline;
+  text-decoration-color: var(--side-a);
+  text-decoration-thickness: 0.04em;
+  text-underline-offset: 0.12em;
 }
 
 /* "Deb is judging": a soft light travelling across the text. */
@@ -134,28 +218,109 @@
 
 /* An excerpt the judge flagged, inside a message. */
 .excerpt {
-  text-decoration: underline dashed var(--warning);
-  text-decoration-thickness: 1.5px;
+  background: color-mix(in srgb, var(--destructive) 20%, transparent);
+  text-decoration: underline solid var(--destructive);
+  text-decoration-thickness: 2px;
   text-underline-offset: 4px;
   cursor: pointer;
-  border-radius: 3px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 .excerpt:hover,
 .excerpt[data-open="true"] {
-  background: color-mix(in srgb, var(--warning) 16%, transparent);
+  background: color-mix(in srgb, var(--destructive) 38%, transparent);
 }
 /* A claim the bot ruled on. */
 .excerpt-checked {
-  text-decoration: underline solid var(--bot);
-  text-decoration-thickness: 1.5px;
+  text-decoration: underline dotted var(--muted-foreground);
+  text-decoration-thickness: 1px;
   text-underline-offset: 4px;
 }
 
-.wordmark-ai {
-  background: linear-gradient(90deg, var(--side-a), var(--side-b));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+/* A blinking block cursor, for the bot's terminal. */
+.caret {
+  display: inline-block;
+  width: 0.55em;
+  height: 1.05em;
+  vertical-align: text-bottom;
+  background: var(--muted-foreground);
+  animation: caret 1s steps(1) infinite;
+}
+@keyframes caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* The landing hero: each block rises in turn (`--delay` staggers them). */
+.hero-rise {
+  animation: rise 0.7s var(--ease-expo) var(--delay, 0ms) backwards;
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    translate: 0 18px;
+  }
+}
+.hero-bounce {
+  animation: bounce 1.8s ease-in-out infinite;
+}
+@keyframes bounce {
+  50% {
+    translate: 0 6px;
+  }
+}
+
+/* Deb on the landing page: a face of cubes. Each lit cell is a small block
+   with a lit top-left edge and a shaded bottom-right one. */
+.hero-mark {
+  --mark-cell: clamp(20px, 2.5vw, 30px);
+  animation:
+    rise 0.7s var(--ease-expo) backwards,
+    float 7s ease-in-out 0.7s infinite;
+}
+@keyframes float {
+  50% {
+    translate: 0 -8px;
+  }
+}
+.hero-mark-cell {
+  transition:
+    background-color 0.5s ease,
+    scale 0.2s var(--ease-expo),
+    box-shadow 0.3s ease;
+  animation: cell-in 0.6s var(--ease-expo) var(--delay, 0ms) backwards;
+}
+.hero-mark-cell:not([data-state="off"]) {
+  box-shadow:
+    inset 2px 2px 0 rgb(255 255 255 / 0.22),
+    inset -2px -2px 0 rgb(0 0 0 / 0.2);
+}
+.hero-mark-cell[data-state="body"]:hover {
+  position: relative;
+  z-index: 1;
+  scale: 1.18;
+  filter: brightness(1.15);
+}
+@keyframes cell-in {
+  from {
+    opacity: 0;
+    scale: 0.2;
+    translate: 0 -14px;
+  }
+}
+
+/* The flag in the landing demo lands crooked, like the ones in the room. */
+.demo-flag {
+  rotate: -2deg;
+  animation: flag-in 0.45s var(--ease-expo) backwards;
+}
+@keyframes flag-in {
+  from {
+    opacity: 0;
+    scale: 0.7;
+    rotate: 6deg;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -163,5 +328,13 @@
     animation: none;
     color: var(--muted-foreground);
     background: none;
+  }
+  .caret,
+  .hero-rise,
+  .hero-bounce,
+  .hero-mark,
+  .hero-mark-cell,
+  .demo-flag {
+    animation: none;
   }
 }
