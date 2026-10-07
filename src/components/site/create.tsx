@@ -9,7 +9,7 @@ import { useT } from "@/i18n/LocaleProvider";
 export function Create({ authed, devHint }: { authed: boolean; devHint: boolean }) {
   const t = useT();
   return (
-    <main className="mx-auto flex min-h-[calc(100dvh-3.5rem)] w-full max-w-6xl flex-col items-center justify-center gap-6 px-4 py-12 sm:px-6">
+    <main className="mx-auto flex min-h-[calc(100dvh-var(--nav-h))] w-full max-w-6xl flex-col items-center justify-center gap-6 px-4 py-8 sm:px-6 sm:py-12">
       {authed ? (
         <CreateForm />
       ) : (

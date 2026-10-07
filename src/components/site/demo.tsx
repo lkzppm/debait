@@ -1,36 +1,34 @@
 "use client";
 
-import { TriangleAlert } from "lucide-react";
-import { useEffect, useState, useSyncExternalStore } from "react";
-import { CubesBand } from "@/components/cubes/cubes-canvas";
-import { StatusTag } from "@/components/room/message-item";
-import { useT } from "@/i18n/LocaleProvider";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { AskItem } from "@/components/room/ask-item";
+import { MessageItem } from "@/components/room/message-item";
+import { Meter } from "@/components/room/meter";
+import { ScorePanel } from "@/components/room/score-panel";
+import { useLocale } from "@/i18n/LocaleProvider";
 import { BRAND, MENTION } from "@/lib/brand";
-import { FALLACY_UNIT, meterShare, scoreMessage, VALIDATION_DELTA } from "@/lib/debate/scoring";
-import { QUALITY_KEYS, type Judgement, type Quality } from "@/lib/debate/types";
+import { reduce } from "@/lib/debate/reducer";
+import type { DebateEvent, DebateEventBody, DebateState, RoomMeta, Seat } from "@/lib/debate/types";
 import { cn } from "@/lib/utils";
-import { Deb } from "./deb";
 
-/* One short debate (two messages and a call to the bot) shown the four ways
-   the room shows it: the chat, the ledger, the bot's terminal and the meter.
-   A step is in focus at a time and every piece follows it. The focus walks
-   the steps on its own, follows the pointer on the step buttons, and only
-   pauses while the pointer is over them. The
-   numbers are not typed in: they come out of the same scoring code the
-   room uses. */
+/* One short debate (two messages and a call to the bot), played with the
+   room's own pieces. The debate is a scripted event log; each step shows a
+   longer prefix of it, reduced by the same `reduce()` the room uses, so the
+   scores, the ledger and the meter are the scoring code's, not typed in.
+   The focus walks the steps on its own, follows the pointer on the step
+   buttons, and only pauses while the pointer is over them. */
 
-const NAMES = { a: "Ana", b: "Bia" };
-
-const OBSERVED = { claims: [], manipulation: false, note: "", summary: "" };
-/** What a judge could observe in the opening message (rebuttal does not apply). */
-const FIRST: Judgement = { ...OBSERVED, quality: { logic: 8, evidence: 8, rebuttal: 0, clarity: 7 }, fallacies: [] };
-const SECOND_QUALITY: Quality = { logic: 4, evidence: 3, rebuttal: 5, clarity: 6 };
-const SEVERITY = 2;
+const NAMES: Record<Seat, string> = { a: "Ana", b: "Bia" };
+/** Bloom et al., "Does Working from Home Work?", QJE 2015: the study the demo's claim is about. */
+const SOURCE_URL = "https://doi.org/10.1093/qje/qju032";
 
 /** The steps, and how long the focus rests on each (milliseconds). */
 const STEPS = ["argue", "scored", "attack", "flagged", "call", "checked"] as const;
-const REST = [2000, 2800, 2200, 3200, 2600, 4600];
+const REST = [2000, 3000, 2200, 3400, 2600, 5000];
 const LAST = STEPS.length - 1;
+/** How many events of the script each step shows (the first three seat the debaters and start). */
+const SHOWN = [4, 5, 6, 7, 8, 9];
+const CALL = STEPS.indexOf("call");
 
 const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
 function subscribeReducedMotion(listener: () => void) {
@@ -39,223 +37,193 @@ function subscribeReducedMotion(listener: () => void) {
   return () => query.removeEventListener("change", listener);
 }
 
-/** Appears in place when `shown`, and keeps its room while hidden so nothing jumps. */
-function Appear({ shown, className, children }: { shown: boolean; className?: string; children: React.ReactNode }) {
+const ignore = () => {};
+
+function Piece({ label, className, children }: { label?: string; className?: string; children: React.ReactNode }) {
   return (
-    <div
-      aria-hidden={!shown}
-      className={cn("transition-[opacity,translate] duration-500 ease-out-expo", shown ? "opacity-100" : "translate-y-2 opacity-0", className)}
-    >
+    <div className={cn("min-w-0", className)}>
+      {label && (
+        <p className="eyebrow mb-3 flex items-center gap-2 text-muted-foreground">
+          <span className="size-1.5 bg-current" />
+          {label}
+        </p>
+      )}
       {children}
     </div>
   );
 }
 
-function Piece({ label, className, children }: { label: string; className?: string; children: React.ReactNode }) {
+/**
+ * Lays invisible copies of the larger states under the current one, in the
+ * same grid cell: the box is as tall as the tallest of them from the start,
+ * so nothing below moves while pieces arrive.
+ */
+function Settled({ ghosts, ghostClassName, children }: { ghosts: React.ReactNode[]; ghostClassName?: string; children: React.ReactNode }) {
+  // One column that may shrink: an auto track would take the widest line of text, unwrapped.
   return (
-    <div className={cn("min-w-0", className)}>
-      <p className="eyebrow mb-3 flex items-center gap-2 text-muted-foreground">
-        <span className="size-1.5 bg-current" />
-        {label}
-      </p>
-      {children}
+    <div className="grid grid-cols-[minmax(0,1fr)]">
+      {ghosts.map((ghost, index) => (
+        <div key={index} aria-hidden inert className={cn("invisible col-start-1 row-start-1", ghostClassName)}>
+          {ghost}
+        </div>
+      ))}
+      <div className="col-start-1 row-start-1">{children}</div>
+    </div>
+  );
+}
+
+/** The chat as the room draws it: messages with Deb's bubbles, and the call to her. */
+function Feed({ state }: { state: DebateState }) {
+  return (
+    <div className="flex flex-col gap-5">
+      {state.timeline.map((item) =>
+        item.kind === "message" ? (
+          <MessageItem key={item.message.id} message={item.message} name={NAMES[item.message.seat]} canAct={false} onAsk={ignore} onRetry={ignore} />
+        ) : (
+          <AskItem
+            key={item.ask.id}
+            ask={item.ask}
+            names={NAMES}
+            target={state.messages.find((message) => message.id === (item.ask.reply?.ruling?.targetMessageId ?? item.ask.replyTo)) ?? null}
+          />
+        ),
+      )}
     </div>
   );
 }
 
 export function Demo() {
-  const t = useT();
+  const { t, locale } = useLocale();
   const d = t.home.demo;
   const reduced = useSyncExternalStore(
     subscribeReducedMotion,
     () => window.matchMedia(REDUCED_MOTION).matches,
     () => false,
   );
-  // `step` is null until the walk or the visitor moves it: with reduced motion
-  // the figure then rests on its last step, complete.
-  const [walk, setWalk] = useState<{ step: number | null; pulse: number; dir: 1 | -1; glitch: number }>({
-    step: null,
-    pulse: 0,
-    dir: 1,
-    glitch: 0,
-  });
+  // `chosen` is null until the walk or the visitor moves it: with reduced
+  // motion the figure then rests on its last step, complete.
+  const [chosen, setChosen] = useState<number | null>(null);
+  // When the call to Deb went out: her bubble shows "working" for a while after it.
+  const [askedAt, setAskedAt] = useState(0);
   const [hovered, setHovered] = useState(false);
-  const step = walk.step ?? (reduced ? LAST : 0);
+  const step = chosen ?? (reduced ? LAST : 0);
 
-  const [before, flagged, after] = d.second;
-  const scoreA = scoreMessage(d.first, FIRST, true);
-  const scoreB = scoreMessage(
-    before + flagged + after,
-    { ...OBSERVED, quality: SECOND_QUALITY, fallacies: [{ type: "ad_hominem", quote: flagged, explanation: "", severity: SEVERITY, confidence: 0.9 }] },
-    false,
-  );
-  const bonus = VALIDATION_DELTA.confirmed;
-  // Side A's share of the meter at each step.
-  const afterA = meterShare(scoreA.points, 0);
-  const afterB = meterShare(scoreA.points, scoreB.points);
-  const shares = [0.5, afterA, afterA, afterB, afterB, meterShare(scoreA.points + bonus, scoreB.points)];
-  const share = shares[step];
-  const percent = Math.round(share * 100);
-
-  const go = (next: number) =>
-    setWalk((current) => {
-      const from = current.step ?? 0;
-      if (from === next && current.step !== null) return current;
-      const moved = shares[next] !== shares[from];
-      return {
-        step: next,
-        pulse: current.pulse + (moved ? 1 : 0),
-        dir: moved ? (shares[next] > shares[from] ? 1 : -1) : current.dir,
-        // The mosaic flickers when the fallacy is flagged.
-        glitch: current.glitch + (STEPS[next] === "flagged" ? 1 : 0),
-      };
-    });
+  const go = (next: number) => {
+    if (next === CALL) setAskedAt(Date.now());
+    setChosen(next);
+  };
 
   useEffect(() => {
     if (hovered || reduced) return;
     const id = setTimeout(() => go((step + 1) % STEPS.length), REST[step]);
     return () => clearTimeout(id);
-    // `go` only reads the shares, which follow the language.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, hovered, reduced]);
+
+  const meta: RoomMeta = useMemo(
+    () => ({
+      id: "demo",
+      motion: "",
+      stances: { a: t.admin.defaultStanceA, b: t.admin.defaultStanceB },
+      locale,
+      format: { rounds: 1, charLimit: 600, challenges: 3, strictness: "balanced" },
+      createdAt: 0,
+    }),
+    [locale, t],
+  );
+
+  // The script, and the room after each step of it.
+  const states = useMemo(() => {
+    const [before, flagged, after] = d.second;
+    const quiet = { manipulation: false, summary: "" };
+    const script: DebateEventBody[] = [
+      { type: "room.joined", seat: "a", name: NAMES.a },
+      { type: "room.joined", seat: "b", name: NAMES.b },
+      { type: "room.started" },
+      { type: "debate.message", id: "m1", seat: "a", text: d.first },
+      {
+        type: "debate.judgement",
+        messageId: "m1",
+        engine: "groq",
+        model: "demo",
+        judgement: {
+          ...quiet,
+          quality: { logic: 8, evidence: 8, rebuttal: 0, clarity: 7 },
+          fallacies: [],
+          claims: [{ quote: d.claim, kind: "fact", checkworthy: true }],
+          note: d.notes[0],
+        },
+      },
+      { type: "debate.message", id: "m2", seat: "b", text: before + flagged + after },
+      {
+        type: "debate.judgement",
+        messageId: "m2",
+        engine: "groq",
+        model: "demo",
+        judgement: {
+          ...quiet,
+          quality: { logic: 4, evidence: 3, rebuttal: 5, clarity: 6 },
+          fallacies: [{ type: "ad_hominem", quote: flagged, explanation: d.explanation, severity: 2, confidence: 0.9 }],
+          claims: [],
+          note: d.notes[1],
+        },
+      },
+      { type: "bot.asked", id: "k1", seat: "b", text: `${MENTION} ${d.ask}`, replyTo: "m1" },
+      {
+        type: "bot.replied",
+        askId: "k1",
+        engine: "groq",
+        model: "demo",
+        reply: {
+          intent: "validate",
+          text: d.answer,
+          sources: [{ title: d.source, url: SOURCE_URL }],
+          ruling: { targetMessageId: "m1", claimQuote: d.claim, status: "confirmed" },
+        },
+      },
+    ];
+    // Only the call carries a real time: Deb's bubble works out from it whether the answer is overdue.
+    const events = script.map((body, seq) => ({ ...body, seq, at: body.type.startsWith("bot.") ? askedAt : 0 }) as DebateEvent);
+    return SHOWN.map((count) => reduce(meta, events.slice(0, count)));
+  }, [meta, d, askedAt]);
+
+  const state = states[step];
+  const final = states[LAST];
+  const [first, second] = final.messages;
+
+  // What the meter reacts to, as in the room.
+  const lastEntry = state.ledger.at(-1);
+  const pulseDir: 1 | -1 = lastEntry && (lastEntry.seat === "a") !== lastEntry.delta >= 0 ? -1 : 1;
+  const glitch = state.messages.reduce((count, message) => count + (message.score?.penalties.length ?? 0), 0);
 
   const captions = [
     d.steps.argue(NAMES.a),
-    d.steps.scored(scoreA.points),
+    d.steps.scored(first.score?.points ?? 0),
     d.steps.attack(NAMES.b),
-    d.steps.flagged(t.fallacies.ad_hominem.name, scoreB.penalty),
+    d.steps.flagged(t.fallacies.ad_hominem.name, second.score?.penalty ?? 0),
     d.steps.call(NAMES.b),
-    d.steps.checked(bonus, NAMES.a),
+    d.steps.checked(first.validation?.delta ?? 0, NAMES.a),
   ];
 
-  // The rubric shown is the last judged message's.
-  const rubric = step >= 3 ? SECOND_QUALITY : step >= 1 ? FIRST.quality : null;
-  const opening = step < 3;
-
   return (
-    <figure aria-label={d.title}>
-      <div className="grid gap-x-12 gap-y-10 lg:grid-cols-2">
+    <figure aria-label={d.title(BRAND.name)}>
+      <div className="grid gap-x-12 gap-y-8 sm:gap-y-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
         <Piece label={d.chat} className="lg:row-span-2">
-          <div className="flex flex-col gap-3">
-            <Appear shown className="w-[92%] border border-l-2 border-border border-l-side-a bg-card p-4">
-              <p className="text-xs">
-                <span className="mark-a">{NAMES.a}</span>
-              </p>
-              <p className="mt-2 leading-relaxed">{d.first}</p>
-              <p className="mt-3 h-6 font-mono text-sm">
-                {step === 0 ? <span className="shimmer">{t.feed.judging}</span> : <span className="mark-a">+{scoreA.points}</span>}
-              </p>
-            </Appear>
-
-            <Appear shown={step >= 2} className="ml-auto w-[92%] border border-r-2 border-border border-r-side-b bg-card p-4">
-              <p className="text-right text-xs">
-                <span className="mark-b">{NAMES.b}</span>
-              </p>
-              <p className="mt-2 leading-relaxed">
-                {before}
-                <span className={cn("transition-colors duration-500", step >= 3 && "excerpt cursor-default")}>{flagged}</span>
-                {after}
-              </p>
-              <div className="mt-3 flex h-7 items-center gap-3 font-mono text-sm">
-                {step === 2 ? (
-                  <span className="shimmer">{t.feed.judging}</span>
-                ) : (
-                  <>
-                    <span className="mark-b">+{scoreB.points}</span>
-                    <span className="demo-flag inline-flex items-center gap-1.5 border border-destructive/50 bg-background px-2 py-0.5 font-sans text-destructive">
-                      <TriangleAlert className="size-3.5" />
-                      {t.fallacies.ad_hominem.name} −{FALLACY_UNIT * SEVERITY}
-                    </span>
-                  </>
-                )}
-              </div>
-            </Appear>
-
-            {/* The call to the bot, as the room draws it: a terminal. */}
-            <Appear shown={step >= 4} className="border border-border bg-popover">
-              <div className="flex items-center gap-3 border-b border-border px-4 py-2 font-mono text-xs text-muted-foreground">
-                <span className="flex gap-1.5" aria-hidden>
-                  <span className="size-2.5 rounded-full bg-destructive" />
-                  <span className="size-2.5 rounded-full bg-warning" />
-                  <span className="size-2.5 rounded-full bg-side-b" />
-                </span>
-                <Deb mood={step === 4 ? "busy" : "idle"} className="size-4 text-bot" />
-                <span className="min-w-0 flex-1 truncate">
-                  {BRAND.bot.handle}@{BRAND.name.toLowerCase()}
-                </span>
-                <span className="uppercase">{step === 4 ? t.bot.state.working : t.bot.state.done}</span>
-              </div>
-              <div className="flex min-h-32 flex-col gap-2 px-4 py-3 font-mono text-sm">
-                <p>
-                  <span className="text-side-b">{NAMES.b} $</span> {MENTION} {d.ask}
-                </p>
-                {step === 4 && (
-                  <p className="text-muted-foreground">
-                    <span className="shimmer">{t.bot.searching}</span> <span className="caret" />
-                  </p>
-                )}
-                <Appear shown={step >= 5} className="flex flex-col gap-2">
-                  <p className="flex flex-wrap items-center gap-2 font-sans">
-                    <StatusTag status="confirmed">{t.status.confirmed}</StatusTag>
-                    <span>{d.answer}</span>
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    [1] <span className="text-side-a underline decoration-side-a/40 underline-offset-4">{d.source}</span>
-                  </p>
-                </Appear>
-              </div>
-            </Appear>
-          </div>
-        </Piece>
-
-        <Piece label={d.score}>
-          <ol className="flex flex-col font-mono text-sm">
-            <LedgerRow shown={step >= 1} seat="a" delta={scoreA.points} name={NAMES.a} math={`${t.feed.rubric} ${scoreA.base}`} />
-            <LedgerRow
-              shown={step >= 3}
-              seat="b"
-              delta={scoreB.points}
-              name={NAMES.b}
-              math={`${scoreB.base} − ${scoreB.penalty} · ${t.fallacies.ad_hominem.name}`}
-            />
-            <LedgerRow shown={step >= 5} seat="a" delta={bonus} name={NAMES.a} math={`${MENTION} · ${t.panel.factCheck}`} />
-          </ol>
-
-          <dl className="mt-6 grid grid-cols-[auto_minmax(0,1fr)_2.5rem] items-center gap-x-3 gap-y-2 text-xs text-muted-foreground">
-            {QUALITY_KEYS.map((key) => {
-              const skipped = key === "rebuttal" && opening;
-              const value = rubric && !skipped ? rubric[key] : 0;
-              return (
-                <div key={key} className="contents">
-                  <dt>{t.quality[key]}</dt>
-                  <dd className="h-2 bg-muted">
-                    <div
-                      className={cn("h-full transition-[width,background-color] duration-700 ease-out-expo", step >= 3 ? "bg-side-b" : "bg-side-a")}
-                      style={{ width: `${value * 10}%` }}
-                    />
-                  </dd>
-                  <dd className="text-right font-mono tabular-nums">{skipped ? t.feed.notApplicable : rubric ? value : ""}</dd>
-                </div>
-              );
-            })}
-          </dl>
+          <Settled ghosts={[<Feed key="final" state={final} />]}>
+            <Feed state={state} />
+          </Settled>
         </Piece>
 
         <Piece label={d.meter}>
-          <div className="flex items-end justify-between gap-4">
-            <p className="flex items-baseline gap-3">
-              <span className="mark-a text-xs">{NAMES.a}</span>
-              <span className="text-5xl leading-none font-medium tracking-tighter tabular-nums">{percent}%</span>
-            </p>
-            <p className="flex items-baseline gap-3">
-              <span className="text-5xl leading-none font-medium tracking-tighter tabular-nums">{100 - percent}%</span>
-              <span className="mark-b text-xs">{NAMES.b}</span>
-            </p>
-          </div>
-          <div className="relative mt-4 h-14 overflow-hidden border border-border">
-            <CubesBand share={share} pulse={walk.pulse} pulseDir={walk.dir} glitch={walk.glitch} rows={3} />
-          </div>
+          <Meter meta={meta} state={state} names={NAMES} pulse={state.ledger.length} pulseDir={pulseDir} glitch={glitch} />
           <p className="mt-3 text-sm text-muted-foreground">{d.note}</p>
+        </Piece>
+
+        {/* Beside the chat (lg) the ledger takes only the height it needs: the chat already holds the figure's height.
+            Stacked under it, it keeps the final height so the page below does not move. */}
+        <Piece className="panel p-5 lg:self-start">
+          <Settled ghosts={[<ScorePanel key="final" meta={meta} state={final} names={NAMES} />]} ghostClassName="lg:hidden">
+            <ScorePanel meta={meta} state={state} names={NAMES} />
+          </Settled>
         </Piece>
       </div>
 
@@ -282,29 +250,24 @@ export function Demo() {
             </button>
           ))}
         </span>
-        <p className="min-h-6 font-mono text-sm">
-          <span className="mr-3 text-muted-foreground">
-            {String(step + 1).padStart(2, "0")}/{String(STEPS.length).padStart(2, "0")}
-          </span>
-          {captions[step]}
-        </p>
+        <div className="min-w-0 flex-1 font-mono text-sm">
+          {/* Every caption laid in the same cell, so a longer one never pushes the page. */}
+          <Settled ghosts={captions.map((caption, index) => <Caption key={index} index={index} text={caption} />)}>
+            <Caption index={step} text={captions[step]} />
+          </Settled>
+        </div>
       </figcaption>
     </figure>
   );
 }
 
-function LedgerRow({ shown, seat, delta, name, math }: { shown: boolean; seat: "a" | "b"; delta: number; name: string; math: string }) {
+function Caption({ index, text }: { index: number; text: string }) {
   return (
-    <li
-      aria-hidden={!shown}
-      className={cn(
-        "flex items-center gap-3 border-b border-border py-2.5 transition-[opacity,translate] duration-500 ease-out-expo",
-        shown ? "opacity-100" : "-translate-x-2 opacity-0",
-      )}
-    >
-      <span className={cn("w-12 text-center", seat === "a" ? "mark-a" : "mark-b")}>+{delta}</span>
-      <span className="font-sans">{name}</span>
-      <span className="ml-auto truncate text-xs text-muted-foreground">{math}</span>
-    </li>
+    <p>
+      <span className="mr-3 text-muted-foreground">
+        {String(index + 1).padStart(2, "0")}/{String(STEPS.length).padStart(2, "0")}
+      </span>
+      {text}
+    </p>
   );
 }

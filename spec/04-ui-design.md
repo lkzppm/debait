@@ -25,10 +25,11 @@ The two differentiators (`00-overview.md`) keep the most visible real estate: th
 
 Laid out like GraphMan's (`../GraphMan/web/src/components/Hero.tsx`), with as few words as possible (Lucas, 2026-10-06: "just the name, a brief description and more animated figures explaining").
 
-- **One viewport**: the live mark on the left, and on the right the wordmark, one sentence and the stack as a row of links; the doors are in the bar (the tagline and the two buttons were removed from the hero on 2026-10-06). An arrow points down.
-- **The live mark** (`site/hero-mark.tsx`): Deb as a face of cubes, 11 by 10 cells, purple on the left half and green on the right, the middle column changing hands. Cells build in on load and reshuffle their shade; her eyes follow the pointer; she blinks; a click makes her frown and raise a crooked flag with a fallacy and its cost.
-- **How it works** (`site/demo.tsx`): one short scripted debate (two messages and a call to `@deb`) shown the ways the room shows it: the chat with the terminal, the ledger with the rubric bars, and the meter (a real `CubesBand`). Six steps; the focus walks them on its own and follows the pointer on the step squares, as GraphMan's `Representations` figure does. The numbers are computed by `scoreMessage` and `meterShare`, not typed in, and the claim checked in it is real (Bloom et al., QJE 2015: 13%).
+- **One viewport**: the live mark on the left, and on the right the wordmark, one sentence and the stack as a row of links, each with its mark (simple-icons for Next.js, WebGPU and Vercel; a chip icon for Groq, which simple-icons lacks); the doors are in the bar (the tagline and the two buttons were removed from the hero on 2026-10-06). An arrow points down.
+- **The live mark** (`site/hero-mark.tsx`): Deb as a face of cubes, 11 by 10 cells, side A's colour on the left half and side B's on the right, the middle column changing hands. Cells build in on load and reshuffle their shade; her eyes follow the pointer; she blinks; a click makes her frown and raise a crooked flag with a fallacy and its cost.
+- **How a Debait works** (`site/demo.tsx`, rebuilt 2026-10-07): one short scripted debate (two messages and a call to `@deb`) played with the room's own components, `MessageItem`, `AskItem`, `Meter` and `ScorePanel`. The script is an event log; each of the six steps is a longer prefix of it run through `reduce()`, so every number is the scoring code's, and the claim checked in it is real (Bloom et al., QJE 2015: 13%). The figure has a fixed height: an invisible copy of the last step sits under the current one in the same grid cell (`Settled`), and the captions are stacked the same way. For the same reason the meter's "provisional" label now sits on the band instead of under it, in the room too.
 - **Three facts** under it: fallacies in the taxonomy, rubric criteria, and "0 points given by the AI" (the model observes, the code scores).
+- **Footer** (`site/footer.tsx`, 2026-10-07): GraphMan's layout. Four columns hang from a hairline rail, each by a square pixel cell (blue for the first two, red for the last two, like the meter) that lights up on hover: Project (source, enter, create, admin), Stack, Author (Lucas Pacheco, GitHub, LinkedIn, from `BRAND.author`), Course (EEL874 · Inteligência Artificial, UFRJ · 2026/2). The wordmark and the year sit centred under a second hairline. Two columns by two on a phone, where only the first row keeps its cells.
 - The top bar above it all (`site/nav.tsx`).
 
 ### Room `/r/[id]`
@@ -56,13 +57,15 @@ Three states in one page.
 └───────────────────────────────────────────────────────────────────────┘
 ```
 
-Everything from Deb is a chat bubble of her own, under the message it answers and on the same side, with her face as the avatar (good, medium or bad by the points; stern on manipulation). A call to `@deb` is two bubbles on the caller's side: the request (dashed border, the handle highlighted) and the answer. The **ledger** ("Extrato") and the **result** are popups (`site/dialog.tsx`, Radix Dialog with a motion fade), opened from the top bar; the result opens by itself when the debate ends and again when the written ruling lands. The composer has no `@` button: the Deb pill on its left opens a popup that lists what a mention can do (check a claim, search, ask about the score, point at a message) with a "Call @deb" button that starts one.
+Everything from Deb is a chat bubble of her own, under the message it answers and on the same side, with her face as the avatar (good, medium or bad by the points; stern on manipulation). A call to `@deb` is two bubbles on the caller's side: the request (dashed border, the handle highlighted) and the answer. The **ledger** ("Extrato", `room/score-panel.tsx`) groups the score changes by round, newest first, with each side's subtotal in the round's header; every line has an icon tile in the side's colour (Deb's verdict face for an argument, the ruling's icon for a fact check, a shield for manipulation), the name and what happened, and the points; the challenges left are `@` glyphs. It and the **result** are popups (`site/dialog.tsx`, Radix Dialog with a motion fade), opened from the top bar; the result opens by itself when the debate ends and again when the written ruling lands. The composer has no `@` button: the Deb pill on its left opens a popup that lists what a mention can do (check a claim, search, ask about the score, point at a message) with a "Call @deb" button that starts one.
 
 Spectators (anyone who opens a full room) see the same page without the composer. **The projector view is just this**: open the room link on the laptop. Design the debate state so it reads from the back of a room at large zoom: the meter and the latest ledger entry must be the biggest things on screen.
 
-The layout is one column at every size (the ledger is a popup); the room must work on two phones, that is the main use. Carry over CV-AI's mobile lessons (`../CV-AI/spec/03-ui-design.md`, "Layout em telas pequenas"): 16px inputs so iOS Safari does not zoom, `interactiveWidget: "resizes-content"`, no full-screen `backdrop-filter` over the animated background on phones.
+The layout is one column at every size (the ledger is a popup); the room must work on two phones, that is the main use. Phone pass (2026-10-06, `feat/mobile`): the top bar is two rows under `sm` (logo and controls, then the two doors as equal tabs) and pages size themselves with `--nav-h`; the room bar keeps only Deb, the motion, the ledger and result buttons and the language switch; the meter's numbers drop to `text-3xl`; popups become bottom sheets; the join field and the mention mode stay at 16px so iOS does not zoom; `backdrop-filter` is only applied from `sm` up (the cubes run behind everything). Carry over CV-AI's mobile lessons (`../CV-AI/spec/03-ui-design.md`, "Layout em telas pequenas"): 16px inputs so iOS Safari does not zoom, `interactiveWidget: "resizes-content"`, no full-screen `backdrop-filter` over the animated background on phones.
 
 ### Join `/join` and Create `/create`
+
+On `/create` the judge's level is picked from three faces of Deb (`admin/level-picker.tsx`: pleased for lenient, neutral for balanced, stern for strict). The created room's card shows the format as five tiles (rounds, challenges, characters, Deb's language, level with its face) and the QR code in the side colours (a blue to red gradient through `fill="url(#…)"`) on white, with Deb in its cleared middle (error correction H); the link is no longer printed under it.
 
 `/join`: a title, one sentence, and a card with the code as six square cells, three purple and three aqua, filled as you type (one invisible input over them, so paste and phone keyboards work), a one-row mosaic along the top, and the Enter button. `/create`: the password card (Deb, a purple top edge, the field lighting up purple on focus) beside a line saying why (every debate spends the free quota); then the form (coloured left edges on the two stance fields, steppers instead of number spinners). **One room at a time** (Lucas, 2026-10-06): once created, the form is replaced by the room's card (code, motion, the two sides with who took them, format, QR code, link, Copy, Open) with a **Close room** button that stops the debate and brings the form back. The room id is kept in localStorage (`debait.created`) and looked up on reload through `GET /api/admin/rooms`; a room that is finished or gone drops out by itself. Built 2026-10-06 at Lucas's request for pages "more interesting, using the palette, better inputs"; not seen running.
 
@@ -90,27 +93,29 @@ Functional, not decorated. Password form; then a table of debates (motion, statu
 
 ## Palette and themes (tokens in `src/app/globals.css`)
 
-Brazil-specific constraint, still valid: **never red vs blue or green/yellow vs red** for the two sides; those pairs read as political parties. The pair chosen on 2026-10-06 (third pass) is **neon purple vs aqua**: the earlier lavender vs mint and violet vs green were both rejected.
+**Blue vs red** since 2026-10-07 (Lucas, after trying it locally: "I loved the red vs blue theme"). This reverses the earlier rule against red vs blue, which reads as political parties in Brazil; Lucas chose it knowing that. Before it: neon purple vs aqua (2026-10-06, third pass), and earlier lavender vs mint and violet vs green. Because red is now a side, `--destructive` (fallacy flags, "false", errors) moved from red to magenta.
 
 Two themes (Lucas, 2026-10-06): **paper** (`:root`) and **night** (`.dark` on `<html>`). A script in `<head>` sets the class before the first paint from the stored choice, or from the system preference the first time; `src/lib/use-theme.ts` holds the store and `site/theme-switch.tsx` the button, which sits next to the language switch on every screen.
 
 | Token | Paper | Night | Use |
 |---|---|---|---|
-| `--side-a` / `--side-a-deep` | `#9B3DFF` / `#7F22E0` | `#B44DFF` / `#9A2BF0` | side A, neon purple, and the app's accent (primary buttons, eyebrows, links) |
-| `--side-b` / `--side-b-deep` | `#0AA896` / `#088C7D` | `#2EE6D6` / `#12C4B4` | side B, aqua (a brighter teal on paper, Lucas's choice over a darker one that passed as text) |
-| `--ink` | `#FFFFFF` | `#07060E` | text on top of either side colour and on `--bot` |
-| `--background` / `--card` / `--popover` | `#F6F5FB` / `#FFFFFF` / `#FFFFFF` | `#07060E` / `#100E1C` / `#0C0A17` | page, cards, the top bar and terminal chrome |
-| `--foreground` / `--muted-foreground` | `#121020` / `#5F5B72` | `#ECEAF6` / `#9893AD` | text |
+| `--side-a` / `--side-a-deep` | `#2F6BFF` / `#1F52D9` | `#4D8DFF` / `#2F6BFF` | side A, blue, and the app's accent (primary buttons, eyebrows, links) |
+| `--side-b` / `--side-b-deep` | `#E63946` / `#C8232F` | `#FF4D5E` / `#E63946` | side B, red |
+| `--ink` | `#FFFFFF` | `#070708` | text on top of either side colour and on `--bot` |
+| `--background` / `--card` / `--popover` | `#F6F5FB` / `#FFFFFF` / `#FFFFFF` | `#070708` / `#111113` / `#0C0C0E` | page, cards, the top bar and terminal chrome; night is a neutral near-black since 2026-10-07 (it was tinted purple) |
+| `--foreground` / `--muted-foreground` | `#121020` / `#5F5B72` | `#ECECEF` / `#9A9AA3` | text |
 | `--border` / `--input` | foreground at 12% / 24% | foreground at 12% / 20% | hairlines |
-| `--destructive` / `--warning` | `#D9304A` / `#9A5B00` | `#FF5C7A` / `#FFC957` | fallacy flags and "false"; "imprecise" and the mock notice |
+| `--destructive` / `--warning` | `#C026D3` / `#9A5B00` | `#E879F9` / `#FFC957` | fallacy flags, "false" and errors (magenta, so they never read as side B); "imprecise" and the mock notice |
 
 - Components use the tokens (`bg-card`, `text-side-a`, `var(--side-a)`), never a hex value, so both themes follow.
 - The cubes shader reads `--side-a`, `--side-b`, `--background` and `--foreground` at runtime and parses them as 6-digit hex: keep those four in that form.
-- Because green is a side, it is never used to mean "good": a confirmed fact-check is a neutral tag with a check mark, and "live" in the admin table is purple.
+- A side colour never means "good" or "bad": a confirmed fact-check is a neutral tag with a check mark, flags are magenta, and "live" in the admin table is the accent blue.
 - Never encode a side by colour alone: always pair it with the name, the "Lado A / Lado B" label and the left/right position.
-- Contrast was estimated by arithmetic, not measured on a screen: on paper the side colours are darker so they pass as text (purple about 4.7:1; the teal is about 3.4:1, under the 4.5:1 text guideline, chosen for brightness).
+- `src/app/icon.svg` (the favicon) repeats Deb's idle face with the night values as fixed hex: regenerate it when the palette changes.
 
 ## vgpu: the cubes (`src/components/cubes/`)
+
+On the night page the cubes were nearly invisible (Lucas, 2026-10-07): their alpha is now multiplied by 1.45 there (1.7 on paper, 1.0 before), the dithered ground glow is 0.1 on both pages, and the grid line 0.14.
 
 `cubes-canvas.tsx` exports the two components; `cubes.ts` owns the GPU; `cubes.wgsl` is the shader. Both components take the meter's state: `share`, `pulse` + `pulseDir` (a counter that fires an impact when the score changes), `glitch` (a counter that fires on a fallacy or a manipulation attempt), `provisional`, `intensity`.
 

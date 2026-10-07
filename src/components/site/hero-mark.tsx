@@ -158,7 +158,7 @@ export function HeroMark({ className }: { className?: string }) {
                 state === "pupil"
                   ? "var(--foreground)"
                   : state === "bow"
-                    ? "var(--bow)"
+                    ? `color-mix(in srgb, var(--bow) ${shade}%, var(--bow-shade))`
                     : state === "body"
                     ? `color-mix(in srgb, var(${sideA ? "--side-a" : "--side-b"}) ${shade}%, var(${sideA ? "--side-a-shade" : "--side-b-shade"}))`
                     : "transparent",

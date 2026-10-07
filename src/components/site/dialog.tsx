@@ -17,9 +17,10 @@ interface DialogProps {
 
 /**
  * The app's popup: a square card over a dimmed page, closed by the X, the
- * backdrop or Escape. Radix handles focus and the portal; motion handles
- * the fade and the slight lift, with the exit animation kept by keeping
- * the Radix tree mounted until it ends.
+ * backdrop or Escape. On a phone it is a sheet rising from the bottom edge.
+ * Radix handles focus and the portal; motion handles the fade and the
+ * slight lift, with the exit animation kept by keeping the Radix tree
+ * mounted until it ends. No blur on phones: it would sit over the cubes.
  */
 export function Dialog({ open, onOpenChange, title, children, className }: DialogProps) {
   const t = useT();
@@ -34,17 +35,18 @@ export function Dialog({ open, onOpenChange, title, children, className }: Dialo
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="fixed inset-0 z-40 bg-background/70 backdrop-blur-sm"
+                className="fixed inset-0 z-40 bg-background/75 sm:backdrop-blur-sm"
               />
             </Radix.Overlay>
             <Radix.Content asChild forceMount aria-describedby={undefined}>
               <motion.div
-                initial={{ opacity: 0, y: 16, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 16 }}
                 transition={{ type: "spring", stiffness: 320, damping: 30 }}
                 className={cn(
-                  "fixed top-1/2 left-1/2 z-50 flex max-h-[min(90dvh,56rem)] w-[calc(100vw-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 flex-col border border-border bg-card shadow-2xl shadow-black/30 outline-none",
+                  "fixed inset-x-0 bottom-0 z-50 flex max-h-[88dvh] w-full flex-col border border-border bg-card shadow-2xl shadow-black/30 outline-none",
+                  "sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:max-h-[min(90dvh,56rem)] sm:w-[calc(100vw-2rem)] sm:max-w-2xl sm:-translate-x-1/2 sm:-translate-y-1/2",
                   className,
                 )}
               >

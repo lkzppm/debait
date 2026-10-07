@@ -59,13 +59,19 @@ export const en = {
     join: "Enter a room",
     discover: "How it works",
     demo: {
-      title: "One debate, step by step",
+      title: (name: string) => `How a ${name} works`,
       chat: "Chat",
-      score: "Score",
       meter: "Meter",
       first: "Remote work raises productivity: a Stanford study measured 13% more.",
+      /** The part of `first` Deb checks: an exact excerpt of it. */
+      claim: "a Stanford study measured 13% more",
       // Before, flagged excerpt, after.
       second: ["", "Only lazy people", " defend that."],
+      notes: [
+        "Side A backs the claim with a named study and a figure.",
+        "Side B attacks the people, not the argument, and brings no evidence.",
+      ],
+      explanation: "Calling the other side lazy says nothing about productivity. A valid reply would question the study or bring other data.",
       ask: "is that 13% real?",
       answer: "A Stanford experiment (Bloom et al., 2015) measured a 13% gain.",
       source: "Bloom et al., QJE 2015",
@@ -84,7 +90,18 @@ export const en = {
       criteria: { label: "rubric criteria", hint: "logic, evidence, rebuttal, clarity" },
       model: { label: "points given by the AI", hint: "it observes, the code scores" },
     },
-    footer: "A UFRJ course project, 2026.",
+    footer: {
+      project: "Project",
+      source: "Source on GitHub",
+      stack: "Stack",
+      licence: "MIT licensed",
+      author: "Author",
+      github: "GitHub",
+      linkedin: "LinkedIn",
+      course: "Course",
+      courseName: "EEL874 · Artificial Intelligence",
+      copyright: "© 2026",
+    },
     admin: "Admin",
   },
 
@@ -101,7 +118,6 @@ export const en = {
     locked: "Creating a room needs the admin password: every debate spends Deb's free quota.",
     yours: "Your room",
     close: "Close room",
-    chars: "characters per argument",
   },
 
   notFound: {
@@ -168,7 +184,8 @@ export const en = {
   },
 
   bot: {
-    called: (name: string) => `${name} called Deb`,
+    /** After the caller's name, in the header of a call to the bot. */
+    called: "called Deb",
     about: (name: string) => `about ${name}'s message`,
     searching: "Deb is on it",
     failed: "Deb could not answer.",
@@ -214,9 +231,8 @@ export const en = {
   panel: {
     ledger: "Ledger",
     ledgerEmpty: "Every point won or lost shows up here, as it happens.",
-    factCheck: "fact check",
-    manipulation: "manipulation",
-    averages: "Rubric averages",
+    argument: "argument",
+    manipulation: "tried to manipulate the judge",
     challenges: "Challenges",
   },
 

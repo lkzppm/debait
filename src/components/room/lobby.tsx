@@ -44,7 +44,7 @@ export function Lobby({ meta, state, identity, onJoined }: LobbyProps) {
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 py-4">
       <section className="px-1 text-center">
         <p className="eyebrow text-side-a">{identity ? t.lobby.waitingOpponent : t.lobby.title}</p>
-        <h2 className="headline mt-4 text-4xl leading-tight font-medium tracking-tight text-balance sm:text-6xl">{meta.motion}</h2>
+        <h2 className="headline mt-4 text-3xl leading-tight font-medium tracking-tight text-balance sm:text-6xl">{meta.motion}</h2>
         <p className="mt-4 text-muted-foreground">
           {t.lobby.format(meta.format.rounds, meta.format.challenges)} · {t.admin.strictness}: {t.strictness[meta.format.strictness].name.toLowerCase()}
         </p>
@@ -69,7 +69,7 @@ export function Lobby({ meta, state, identity, onJoined }: LobbyProps) {
           const occupant = state.seats[seat];
           const mine = identity?.seat === seat;
           return (
-            <section key={seat} className={cn("border border-t-2 border-border bg-card p-6", seat === "a" ? "border-t-side-a" : "border-t-side-b")}>
+            <section key={seat} className={cn("border border-t-2 border-border bg-card p-4 sm:p-6", seat === "a" ? "border-t-side-a" : "border-t-side-b")}>
               <p className={cn("eyebrow", sideText(seat))}>{t.meter.side(seat.toUpperCase())}</p>
               <p className="mt-2 text-2xl font-medium tracking-tight sm:text-3xl">{meta.stances[seat]}</p>
               <div className="mt-6 flex min-h-10 items-center">
@@ -100,7 +100,7 @@ export function Lobby({ meta, state, identity, onJoined }: LobbyProps) {
 
       {error && <p className="text-center text-sm text-destructive">{t.errors[error]}</p>}
 
-      <section className="panel flex flex-col items-center gap-6 p-6 sm:flex-row sm:items-center">
+      <section className="panel flex flex-col items-center gap-5 p-4 sm:flex-row sm:items-center sm:gap-6 sm:p-6">
         <div className="bg-white p-3">{link ? <QRCodeSVG value={link} size={140} marginSize={0} /> : <div className="size-[140px]" />}</div>
         <div className="min-w-0 flex-1 text-center sm:text-left">
           <p className="eyebrow text-side-a">{t.lobby.inviteTitle}</p>

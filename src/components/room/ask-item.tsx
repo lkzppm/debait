@@ -4,6 +4,7 @@ import { ArrowUpRight, AtSign } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { Deb } from "@/components/site/deb";
+import { Debater } from "@/components/site/debater";
 import { Tag } from "@/components/site/pill";
 import { useT } from "@/i18n/LocaleProvider";
 import { BRAND, MENTION } from "@/lib/brand";
@@ -69,24 +70,27 @@ export function AskItem({ ask, names, target }: AskItemProps) {
       transition={{ duration: 0.25 }}
       className={cn("flex w-full flex-col gap-1.5", right ? "items-end" : "items-start")}
     >
-      <header className={cn("flex items-baseline gap-2 px-1 text-xs", right && "flex-row-reverse")}>
+      <header className={cn("flex items-baseline gap-2 px-1 text-xs", right ? "flex-row-reverse pr-8" : "pl-8")}>
         <span className={cn("font-medium", sideText(ask.seat))}>{names[ask.seat]}</span>
-        <span className="text-muted-foreground">{t.bot.called(BRAND.bot.name)}</span>
+        <span className="text-muted-foreground">{t.bot.called}</span>
       </header>
 
       {/* The request: the debater's bubble, dashed in the bot's colour since it is not an argument. */}
-      <div className={cn("w-fit max-w-[min(100%,40rem)] rounded-2xl border border-dashed border-bot/40 bg-card", right ? "rounded-tr-sm" : "rounded-tl-sm")}>
-        <p className="px-4 py-3 text-base leading-relaxed whitespace-pre-wrap">
-          <Mention text={ask.text} />
-        </p>
-        {target && (
-          <p className="flex items-center gap-1.5 border-t border-border px-4 py-2 text-xs text-muted-foreground">
-            <AtSign className="size-3 shrink-0 text-side-a" />
-            <span className="truncate">
-              {t.bot.about(names[target.seat])}: {ruling?.claimQuote || target.text}
-            </span>
+      <div className={cn("flex w-full max-w-[min(100%,40rem)] items-start gap-2", right && "flex-row-reverse")}>
+        <Debater className={cn("mt-1.5 size-6 shrink-0", sideText(ask.seat))} title={names[ask.seat]} />
+        <div className={cn("w-fit max-w-full rounded-2xl border border-dashed border-bot/40 bg-card", right ? "rounded-tr-sm" : "rounded-tl-sm")}>
+          <p className="px-4 py-3 text-base leading-relaxed whitespace-pre-wrap">
+            <Mention text={ask.text} />
           </p>
-        )}
+          {target && (
+            <p className="flex items-center gap-1.5 border-t border-border px-4 py-2 text-xs text-muted-foreground">
+              <AtSign className="size-3 shrink-0 text-side-a" />
+              <span className="truncate">
+                {t.bot.about(names[target.seat])}: {ruling?.claimQuote || target.text}
+              </span>
+            </p>
+          )}
+        </div>
       </div>
 
       {/* The answer: Deb's bubble, with her face as the avatar. */}

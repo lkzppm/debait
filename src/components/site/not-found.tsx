@@ -11,7 +11,7 @@ export function NotFound() {
   return (
     <>
       <Nav />
-      <main className="flex min-h-[calc(100dvh-3.5rem)] flex-col items-center justify-center gap-4 p-6 text-center">
+      <main className="flex min-h-[calc(100dvh-var(--nav-h))] flex-col items-center justify-center gap-4 p-6 text-center">
       <h1 className="text-4xl font-medium tracking-tight">{t.notFound.title}</h1>
       <p className="text-muted-foreground">{t.notFound.body}</p>
       <Pill asChild variant="outline" className="mt-2">

@@ -56,7 +56,7 @@ interface Palette {
 }
 
 /** What the dark theme holds, for a page whose stylesheet has not arrived yet. */
-const DEFAULT_COLORS = { a: "#b44dff", b: "#2ee6d6", background: "#07060e", foreground: "#eceaf6" };
+const DEFAULT_COLORS = { a: "#4d8dff", b: "#ff4d5e", background: "#070708", foreground: "#ececef" };
 
 type Gpu = Awaited<ReturnType<typeof init>>;
 

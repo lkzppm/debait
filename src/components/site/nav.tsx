@@ -13,7 +13,7 @@ import { LocaleSwitch } from "./locale-switch";
 import { Logo } from "./logo";
 import { ThemeSwitch } from "./theme-switch";
 
-const ICON = "grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground";
+const ICON = "grid size-9 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground";
 
 /**
  * The top bar, shared by the pages outside a room: the wordmark as the home
@@ -21,7 +21,8 @@ const ICON = "grid size-8 shrink-0 place-items-center rounded-full text-muted-fo
  * source, the admin panel, the language and the theme on the right. The
  * current page's door is underlined in purple, and the underline slides
  * when the page changes: the bar lives in the (site) layout, so it stays
- * mounted across navigations.
+ * mounted across navigations. On a phone the doors take a second row as
+ * two equal tabs (`--nav-h` in globals.css follows the bar's height).
  */
 export function Nav() {
   const t = useT();
@@ -31,11 +32,14 @@ export function Nav() {
     { href: "/create", label: t.home.create, icon: Plus },
   ];
   return (
-    <header className="sticky top-0 z-20 border-b border-border bg-background/85 backdrop-blur">
-      <div className="mx-auto grid h-14 max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-4 px-4 sm:px-6">
-        <Logo label={t.common.home} className="text-xl" />
+    <header className="sticky top-0 z-20 border-b border-border bg-background/95 sm:bg-background/85 sm:backdrop-blur">
+      <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto] items-center gap-x-4 px-4 sm:h-14 sm:grid-cols-[1fr_auto_1fr] sm:px-6">
+        <Logo label={t.common.home} className="h-14 text-xl" />
 
-        <nav className="flex items-center gap-1" aria-label={t.common.pages}>
+        <nav
+          className="col-span-2 row-start-2 -mx-4 grid grid-cols-2 border-t border-border sm:order-2 sm:col-span-1 sm:row-auto sm:mx-0 sm:flex sm:items-center sm:gap-1 sm:border-0"
+          aria-label={t.common.pages}
+        >
           {doors.map(({ href, label, icon: Icon }) => {
             const active = pathname === href || pathname.startsWith(`${href}/`);
             return (
@@ -44,7 +48,7 @@ export function Nav() {
                 href={href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "relative inline-flex h-14 items-center gap-2 px-3 text-sm transition-colors hover:text-foreground",
+                  "relative inline-flex h-12 items-center justify-center gap-2 px-3 text-sm transition-colors hover:text-foreground sm:h-14 sm:justify-start",
                   active ? "text-foreground" : "text-muted-foreground",
                 )}
               >
@@ -63,7 +67,7 @@ export function Nav() {
           })}
         </nav>
 
-        <div className="flex items-center justify-end gap-1 sm:gap-2">
+        <div className="col-start-2 row-start-1 flex h-14 items-center justify-end gap-1 sm:order-3 sm:col-auto sm:row-auto sm:gap-2">
           <a href={BRAND.repo} target="_blank" rel="noreferrer noopener" className={ICON} title={t.common.source} aria-label={t.common.source}>
             <BrandIcon icon={siGithub} />
           </a>
