@@ -53,7 +53,7 @@ Local walkthrough: `/admin` (password `admin`), create a debate, open its link i
 
 ## Deployment (done 2026-10-06)
 
-- **Production: https://debait-pi.vercel.app** (`debait.vercel.app` belongs to someone else). Vercel project `debait` (`prj_ppdfvnOv2Tot6eCge1AN9FCZ4HlL`) on the team `lucas-pachecos-projects-68b6e0dc` (`team_N5HjNeQxCADT6qTNcLaDWLSm`), linked to `lkzppm/debait`; production tracks `main`, every pull request gets a preview.
+- **Production: https://debait-ufrj.vercel.app** (`debait.vercel.app` belongs to someone else). Vercel project `debait` (`prj_ppdfvnOv2Tot6eCge1AN9FCZ4HlL`) on the team `lucas-pachecos-projects-68b6e0dc` (`team_N5HjNeQxCADT6qTNcLaDWLSm`), linked to `lkzppm/debait`; production tracks `main`, every pull request gets a preview.
 - **Redis**: Upstash for Redis from the Marketplace, resource `debait-redis` (free plan, product `upstash/upstash-kv`), connected to production, preview and development; it injects `KV_REST_API_URL` / `KV_REST_API_TOKEN` (plus `REDIS_URL`, `KV_URL`), which `src/lib/store/index.ts` already accepts.
 - **Env vars** on production and preview: `GROQ_API_KEY`, `GROQ_JUDGE_MODEL`, `GROQ_MENTION_MODEL`, `ADMIN_PASSWORD` (generated on 2026-10-06 and given to Lucas; change it in the Vercel dashboard, Settings, Environment Variables).
 - **First checks passed** on the deployment: `/`, `/join`, `/create`, `/admin` answer 200, an unknown room 404, a wrong password 401, and the admin API reports store `upstash` and engine `groq`. Not yet done on the deployment: a debate between two phones, and watching the event stream survive its 240-second recycle.

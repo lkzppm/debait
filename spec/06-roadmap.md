@@ -21,7 +21,7 @@ What was actually run, and what was not:
 | Screens in headless Chromium at 1440 px and 390 px (landing, lobby, live room as a debater, score tab, admin) | looked at once, **before** the revision (new landing, themes, new shader); nothing after it was seen |
 | **Groq engine** (`src/judge/groq.ts`), prompts, schemas under strict mode, `browser_search` | **never run**: no API key yet |
 | **Upstash driver** | ran on production on 2026-10-06: the admin API reports store `upstash` (listing rooms); creating and playing a room on it is next |
-| **Vercel deployment** | **done 2026-10-06**: https://debait-pi.vercel.app, details in `05-stack-and-versions.md`. `after()` and the SSE recycle on Vercel still unobserved |
+| **Vercel deployment** | **done 2026-10-06**: https://debait-ufrj.vercel.app, details in `05-stack-and-versions.md`. `after()` and the SSE recycle on Vercel still unobserved |
 | The **Groq engine from the scripts** (`pnpm judge`, `pnpm mention --reply`, a ruling) | ran once each on 2026-10-06 with Lucas's key; see `03-judge.md`. The provider dropped the search sources; fixed by reading Groq's raw `executed_tools` |
 | The **cubes shader** in a WebGPU browser; real phones | **not seen by Claude**: Lucas verifies visual changes himself |
 | Unit tests | none written (Lucas: no testing for now) |
