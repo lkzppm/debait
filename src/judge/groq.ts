@@ -83,7 +83,7 @@ async function judgeMessage(input: JudgeInput): Promise<EngineResult<Judgement>>
       roomId: input.roomId,
       modelId: JUDGE_MODEL_ID,
       model: judgeModel(),
-      instructions: p.judgeSystem(),
+      instructions: p.judgeSystem(input.strictness),
       prompt: p.judgeUser(input),
       maxOutputTokens: 1600,
     },

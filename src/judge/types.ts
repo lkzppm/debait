@@ -1,5 +1,5 @@
 import type { Locale } from "@/i18n/locales";
-import type { BotReply, EngineKind, Judgement, Ruling, Seat } from "@/lib/debate/types";
+import type { BotReply, EngineKind, Judgement, Ruling, Seat, Strictness } from "@/lib/debate/types";
 
 /**
  * The contract between the room and whatever does the judging. Two engines
@@ -23,6 +23,8 @@ export interface TranscriptLine {
 }
 
 export interface JudgeInput extends DebateContext {
+  /** The room's level: sets the prompt's calibration (the penalty table is the code's side). */
+  strictness: Strictness;
   seat: Seat;
   round: number;
   /** First message of the debate: there is nothing to rebut. */

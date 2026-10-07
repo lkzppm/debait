@@ -79,16 +79,26 @@ Per message, when its judgement arrives:
 
 ```
 base     = 10 × (0.35·logic + 0.25·evidence + 0.25·rebuttal + 0.15·clarity)      // 0..100
-fallacy  = min(40, Σ 8·severity for fallacies with confidence ≥ 0.7 and a valid quote)
+fallacy  = min(cap, Σ unit·severity for fallacies with confidence ≥ min and a valid quote)
 points   = manipulation ? 0 : clamp(base − fallacy, 0, 100)
 ```
+
+**Three levels of the judge** (Lucas, 2026-10-06: "Deb is being too hard"). The room's `format.strictness` is picked on `/create` and shown in the lobby and the room's top bar. It sets two things: a calibration paragraph in the judge prompt (`CALIBRATION` in `judge/prompts/en.ts` and `pt.ts`: what an ordinary argument scores, how readily to flag) and the penalty table `STRICTNESS` in `scoring.ts`:
+
+| level | confidence min | unit | cap | confirmed / imprecise / false |
+|---|---|---|---|---|
+| lenient | 0.85 | 4 | 20 | +10 / −5 / −10 |
+| balanced (default) | 0.7 | 8 | 40 | +10 / −10 / −20 |
+| strict | 0.6 | 12 | 60 | +10 / −15 / −30 |
+
+Rooms stored before the levels existed are read as balanced. `pnpm judge '<message>' --level strict` tries a level in the terminal.
 
 The **opening message** has nothing to rebut. Giving it a fixed neutral rebuttal would handicap whoever speaks first, so its base is the weighted average of the other three dimensions (weights renormalised), and it is left out of the rebuttal average.
 
 Later, when an `@bot` validation rules on a claim in that message, a separate entry goes to the claim's author:
 
 ```
-validation = confirmed +10 · imprecise −10 · false −20 · unverifiable 0
+validation = confirmed +10 · imprecise −10 · false −20 · unverifiable 0      // balanced; see the table above
 ```
 
 Meter (share of side A, 0..1), with smoothing so the first message does not slam the bar to one end:

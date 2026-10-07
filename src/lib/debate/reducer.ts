@@ -1,4 +1,4 @@
-import { decideWinner, meterShare, scoreMessage, VALIDATION_DELTA } from "./scoring";
+import { decideWinner, meterShare, scoreMessage, STRICTNESS } from "./scoring";
 import {
   QUALITY_KEYS,
   type AskView,
@@ -88,7 +88,7 @@ export function reduce(room: RoomMeta, events: readonly DebateEvent[]): DebateSt
         const message = messages.get(event.messageId);
         if (!message || message.judgement) break;
         message.judgement = event.judgement;
-        message.score = scoreMessage(message.text, event.judgement, message.isOpening);
+        message.score = scoreMessage(message.text, event.judgement, message.isOpening, room.format.strictness);
         message.failed = null;
         message.engine = event.engine;
         if (event.engine === "mock") state.mock = true;
@@ -150,7 +150,7 @@ export function reduce(room: RoomMeta, events: readonly DebateEvent[]): DebateSt
         const target = ruling ? messages.get(ruling.targetMessageId) : undefined;
         // One ruling per message, so a confirmed claim cannot be farmed for points.
         if (ruling && target && !target.validation) {
-          const delta = VALIDATION_DELTA[ruling.status];
+          const delta = STRICTNESS[room.format.strictness].validation[ruling.status];
           target.validation = { askId: ask.id, claimQuote: ruling.claimQuote, status: ruling.status, delta };
           ask.applied = true;
           post({
