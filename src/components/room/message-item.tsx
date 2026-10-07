@@ -69,7 +69,7 @@ interface MessageItemProps {
   onRetry: (messageId: string) => void;
 }
 
-/** One argument and, under it, what the judge made of it: the score with its math. */
+/** One argument and, under it, what the judge made of it, in a bubble of her own: the score with its math. */
 export function MessageItem({ message, name, canAct, onAsk, onRetry }: MessageItemProps) {
   const t = useT();
   const [openPenalty, setOpenPenalty] = useState<number | null>(null);
@@ -146,142 +146,150 @@ export function MessageItem({ message, name, canAct, onAsk, onRetry }: MessageIt
         </p>
       </div>
 
-      <div className={cn("flex w-full max-w-[min(100%,40rem)] flex-col gap-2 px-1 text-sm", right && "items-end text-right")}>
-        {!judgement && !message.failed && (
-          <p className="flex items-center gap-2 text-muted-foreground">
-            <Deb mood="busy" className="size-4" />
-            <span className="shimmer">{t.feed.judging}</span>
-          </p>
-        )}
-
-        {!judgement && message.failed && (
-          <p className="flex flex-wrap items-center gap-2 text-destructive">
-            {message.failed === "budget" ? t.feed.judgeBudget : t.feed.judgeFailed}
-            {canAct && message.failed !== "budget" && (
-              <button type="button" onClick={() => onRetry(message.id)} className="inline-flex items-center gap-1 underline underline-offset-4">
-                <RotateCw className="size-3.5" />
-                {t.feed.retry}
-              </button>
+      {/* Deb answers under the message, in a bubble of her own, from the same side so it reads as a reply to it. */}
+      <div className={cn("flex w-full max-w-[min(100%,40rem)] items-start gap-2", right && "flex-row-reverse")}>
+        <Deb
+          mood={!judgement ? (message.failed ? "stern" : "busy") : score?.manipulation ? "stern" : verdictMood(score?.points ?? 0)}
+          className="mt-1.5 size-6 shrink-0 text-bot"
+          title={BRAND.bot.name}
+        />
+        <div className={cn("flex min-w-0 flex-1 flex-col gap-2 text-sm", right && "items-end")}>
+          <div className={cn("w-fit max-w-full rounded-2xl border border-bot/25 bg-card", right ? "rounded-tr-sm" : "rounded-tl-sm")}>
+            {!judgement && !message.failed && (
+              <p className="px-3.5 py-2.5 text-muted-foreground">
+                <span className="shimmer">{t.feed.judging}</span>
+              </p>
             )}
-          </p>
-        )}
 
-        {judgement && score && (
-          <>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: "spring", stiffness: 380, damping: 26 }}
-              className={cn("flex flex-wrap items-center gap-x-3 gap-y-2", right && "flex-row-reverse")}
-            >
-              <Deb mood={score.manipulation ? "stern" : verdictMood(score.points)} className="size-5 text-bot" title={t.feed.points(score.points)} />
-              {/* The formula with its numbers: points = rubric - penalties. */}
-              <span className="font-mono text-sm tabular-nums">
-                <span className={cn("font-semibold", sideMark(message.seat))}>{signed(score.points)}</span>
-                {!score.manipulation && score.penalty > 0 && (
-                  <span className="text-muted-foreground">
-                    {" = "}
-                    {score.base} {"−"} {score.penalty}
-                  </span>
+            {!judgement && message.failed && (
+              <p className="flex flex-wrap items-center gap-2 px-3.5 py-2.5 text-destructive">
+                {message.failed === "budget" ? t.feed.judgeBudget : t.feed.judgeFailed}
+                {canAct && message.failed !== "budget" && (
+                  <button type="button" onClick={() => onRetry(message.id)} className="inline-flex items-center gap-1 underline underline-offset-4">
+                    <RotateCw className="size-3.5" />
+                    {t.feed.retry}
+                  </button>
                 )}
-              </span>
+              </p>
+            )}
 
-              {score.penalties.map((penalty, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => toggle(index)}
-                  aria-expanded={openPenalty === index}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 border border-destructive/50 bg-background px-2 py-0.5 text-xs text-destructive transition-colors hover:bg-destructive/15",
-                    TILTS[index % TILTS.length],
-                    openPenalty === index && "bg-destructive/15",
-                  )}
+            {judgement && score && (
+              <>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.96 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: "spring", stiffness: 380, damping: 26 }}
+                  className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3.5 py-2.5"
                 >
-                  <TriangleAlert className="size-3.5" />
-                  {t.fallacies[penalty.type].name}
-                  <span className="font-mono">{signed(-penalty.points)}</span>
-                </button>
-              ))}
+                  {/* The formula with its numbers: points = rubric - penalties. */}
+                  <span className="font-mono text-sm tabular-nums" title={t.feed.points(score.points)}>
+                    <span className={cn("font-semibold", sideMark(message.seat))}>{signed(score.points)}</span>
+                    {!score.manipulation && score.penalty > 0 && (
+                      <span className="text-muted-foreground">
+                        {" = "}
+                        {score.base} {"−"} {score.penalty}
+                      </span>
+                    )}
+                  </span>
 
-              {validation && (
-                <StatusTag status={validation.status}>
-                  {t.status[validation.status]}
-                  {validation.delta !== 0 && <span className="font-mono">{signed(validation.delta)}</span>}
-                </StatusTag>
-              )}
+                  {score.penalties.map((penalty, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => toggle(index)}
+                      aria-expanded={openPenalty === index}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 border border-destructive/50 bg-background px-2 py-0.5 text-xs text-destructive transition-colors hover:bg-destructive/15",
+                        TILTS[index % TILTS.length],
+                        openPenalty === index && "bg-destructive/15",
+                      )}
+                    >
+                      <TriangleAlert className="size-3.5" />
+                      {t.fallacies[penalty.type].name}
+                      <span className="font-mono">{signed(-penalty.points)}</span>
+                    </button>
+                  ))}
 
+                  {validation && (
+                    <StatusTag status={validation.status}>
+                      {t.status[validation.status]}
+                      {validation.delta !== 0 && <span className="font-mono">{signed(validation.delta)}</span>}
+                    </StatusTag>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => setShowRubric((shown) => !shown)}
+                    aria-expanded={showRubric}
+                    aria-label={t.feed.rubric}
+                    title={t.feed.rubric}
+                    className="grid size-6 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+                  >
+                    <ChevronDown className={cn("size-3.5 transition-transform", showRubric && "rotate-180")} />
+                  </button>
+                </motion.div>
+
+                {score.manipulation && (
+                  <p className="mx-3.5 mb-2.5 inline-flex -rotate-1 items-center gap-2 border border-destructive/50 bg-background px-3 py-1.5 text-destructive">
+                    <TriangleAlert className="size-4" />
+                    {t.feed.manipulation}
+                  </p>
+                )}
+
+                {judgement.note && <p className="px-3.5 pb-2.5 text-left text-[15px] leading-relaxed">{judgement.note}</p>}
+
+                {opened && (
+                  <div className="border-t border-destructive/40 p-3.5 text-left">
+                    <p className="eyebrow text-destructive">
+                      {t.fallacies[opened.type].name}
+                      <span className="ml-3 text-muted-foreground">{t.feed.severity(opened.severity)}</span>
+                    </p>
+                    <p className="mt-2 text-sm text-muted-foreground">{t.fallacies[opened.type].definition}</p>
+                    <p className="mt-2 text-[15px]">{judgement.fallacies[opened.index].explanation}</p>
+                  </div>
+                )}
+
+                {showRubric && (
+                  <div className="grid grid-cols-2 gap-x-5 gap-y-3 border-t border-border p-3.5 text-left sm:grid-cols-4">
+                    {QUALITY_KEYS.map((key) => {
+                      const skipped = key === "rebuttal" && message.isOpening;
+                      const value = judgement.quality[key];
+                      return (
+                        <div key={key}>
+                          <div className="flex items-baseline justify-between gap-2">
+                            <span className="eyebrow text-muted-foreground">{t.quality[key]}</span>
+                            <span className="font-mono text-sm tabular-nums">{skipped ? t.feed.notApplicable : value}</span>
+                          </div>
+                          {/* Ten cells, lit up to the rating. */}
+                          <div className="mt-1.5 flex gap-px">
+                            {Array.from({ length: 10 }, (_, cell) => (
+                              <span key={cell} className={cn("h-2 flex-1", !skipped && cell < value ? sideBg(message.seat) : "bg-muted")} />
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {message.isOpening && <p className="col-span-full text-xs text-muted-foreground">{t.feed.openingNote}</p>}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {judgement && score && canAct && !validation && checkable && (
+            <p className={cn("flex flex-wrap items-center gap-x-2 gap-y-1 px-1 text-xs text-muted-foreground", right && "flex-row-reverse")}>
+              <span>{t.feed.canCheck}</span>
               <button
                 type="button"
-                onClick={() => setShowRubric((shown) => !shown)}
-                aria-expanded={showRubric}
-                aria-label={t.feed.rubric}
-                title={t.feed.rubric}
-                className="grid size-6 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+                onClick={() => onAsk(message.id)}
+                className="inline-flex items-center gap-0.5 rounded-full border border-side-a/60 px-2.5 py-0.5 text-side-a hover:bg-side-a/15"
               >
-                <ChevronDown className={cn("size-3.5 transition-transform", showRubric && "rotate-180")} />
+                <AtSign className="size-3" />
+                {BRAND.bot.handle}
               </button>
-            </motion.div>
-
-            {score.manipulation && (
-              <p className="inline-flex -rotate-1 items-center gap-2 border border-destructive/50 bg-background px-3 py-1.5 text-destructive">
-                <TriangleAlert className="size-4" />
-                {t.feed.manipulation}
-              </p>
-            )}
-
-            {judgement.note && <p className="text-xs text-muted-foreground">{judgement.note}</p>}
-
-            {opened && judgement && (
-              <div className="w-full border border-destructive/40 bg-background p-4 text-left">
-                <p className="eyebrow text-destructive">
-                  {t.fallacies[opened.type].name}
-                  <span className="ml-3 text-muted-foreground">{t.feed.severity(opened.severity)}</span>
-                </p>
-                <p className="mt-2 text-sm text-muted-foreground">{t.fallacies[opened.type].definition}</p>
-                <p className="mt-2 text-[15px]">{judgement.fallacies[opened.index].explanation}</p>
-              </div>
-            )}
-
-            {showRubric && (
-              <div className="grid w-full grid-cols-2 gap-x-5 gap-y-3 border border-border bg-background p-4 text-left sm:grid-cols-4">
-                {QUALITY_KEYS.map((key) => {
-                  const skipped = key === "rebuttal" && message.isOpening;
-                  const value = judgement.quality[key];
-                  return (
-                    <div key={key}>
-                      <div className="flex items-baseline justify-between">
-                        <span className="eyebrow text-muted-foreground">{t.quality[key]}</span>
-                        <span className="font-mono text-sm tabular-nums">{skipped ? t.feed.notApplicable : value}</span>
-                      </div>
-                      {/* Ten cells, lit up to the rating. */}
-                      <div className="mt-1.5 flex gap-px">
-                        {Array.from({ length: 10 }, (_, cell) => (
-                          <span key={cell} className={cn("h-2 flex-1", !skipped && cell < value ? sideBg(message.seat) : "bg-muted")} />
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-                {message.isOpening && <p className="col-span-full text-xs text-muted-foreground">{t.feed.openingNote}</p>}
-              </div>
-            )}
-
-            {canAct && !validation && checkable && (
-              <p className={cn("flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground", right && "flex-row-reverse")}>
-                <span>{t.feed.canCheck}</span>
-                <button
-                  type="button"
-                  onClick={() => onAsk(message.id)}
-                  className="inline-flex items-center gap-0.5 rounded-full border border-side-a/60 px-2.5 py-0.5 text-side-a hover:bg-side-a/15"
-                >
-                  <AtSign className="size-3" />
-                  {BRAND.bot.handle}
-                </button>
-              </p>
-            )}
-          </>
-        )}
+            </p>
+          )}
+        </div>
       </div>
     </motion.article>
   );

@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "motion/react";
 import { CubesBand } from "@/components/cubes/cubes-canvas";
 import { Tag } from "@/components/site/pill";
 import { useT } from "@/i18n/LocaleProvider";
@@ -8,25 +7,17 @@ import { SEATS, type DebateState, type Seat } from "@/lib/debate/types";
 import { cn } from "@/lib/utils";
 import { sideMark, sideText } from "./message-item";
 
-/** The end of the debate: who argued better by the numbers, and the bot's written ruling. */
+/** The end of the debate, shown in a popup: who argued better by the numbers, and the bot's written ruling. */
 export function Result({ state, names }: { state: DebateState; names: Record<Seat, string> }) {
   const t = useT();
   const { winner, ruling } = state;
 
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ type: "spring", stiffness: 220, damping: 24 }}
-      className={cn(
-        "mx-auto w-full max-w-3xl border bg-card",
-        winner === "a" ? "border-side-a/70" : winner === "b" ? "border-side-b/70" : "border-border",
-      )}
-    >
+    <section className={cn("border-t-4", winner === "a" ? "border-side-a" : winner === "b" ? "border-side-b" : "border-border")}>
       <div className="p-6 sm:p-8">
         <p className="eyebrow text-side-a">{t.result.title}</p>
 
-        <h2 className="mt-4 text-4xl leading-tight font-medium tracking-tight sm:text-6xl">
+        <h2 className="mt-4 pr-8 text-4xl leading-tight font-medium tracking-tight sm:text-6xl">
           {winner === null ? (
             t.result.noScore
           ) : winner === "draw" ? (
@@ -90,6 +81,6 @@ export function Result({ state, names }: { state: DebateState; names: Record<Sea
           <CubesBand share={state.share} rows={4} />
         </div>
       )}
-    </motion.section>
+    </section>
   );
 }

@@ -8,6 +8,11 @@ export const otherSeat = (seat: Seat): Seat => (seat === "a" ? "b" : "a");
 export type RoomStatus = "lobby" | "live" | "finished";
 export type EngineKind = "groq" | "mock";
 
+/** How hard the judge is: it sets the prompt's calibration and the penalty table in `scoring.ts`. */
+export type Strictness = "lenient" | "balanced" | "strict";
+export const STRICTNESS_LEVELS: readonly Strictness[] = ["lenient", "balanced", "strict"];
+export const isStrictness = (value: unknown): value is Strictness => STRICTNESS_LEVELS.includes(value as Strictness);
+
 export interface RoomFormat {
   /** Rounds per debater; the debate has `2 * rounds` messages. */
   rounds: number;
@@ -15,6 +20,7 @@ export interface RoomFormat {
   charLimit: number;
   /** How many times each debater may send the bot to the web. */
   challenges: number;
+  strictness: Strictness;
 }
 
 /** What everyone in the room may know about it. */

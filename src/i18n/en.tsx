@@ -20,9 +20,17 @@ export const en = {
     home: "Debait home",
     mock: "mock",
     loading: "Loading",
+    close: "Close",
   },
 
   fallacies: FALLACIES.en,
+
+  /** The judge's levels, picked when a room is created. */
+  strictness: {
+    lenient: { name: "Lenient", hint: "Generous ratings. Only blatant fallacies, costing 4 points per severity level." },
+    balanced: { name: "Balanced", hint: "Fair ratings. Fallacies cost 8 points per severity level." },
+    strict: { name: "Strict", hint: "Tournament judge. Every fallacy counts, 12 points per severity level." },
+  },
 
   quality: {
     logic: "Logic",
@@ -185,6 +193,15 @@ export const en = {
     placeholderMention: "Ask Deb to check a claim or to search something",
     send: "Send",
     callBot: "Call @deb",
+    help: "What @deb can do",
+    helpLead: "Write @deb anywhere in your message and it goes to Deb instead of the debate. It never uses your turn.",
+    helpItems: [
+      { title: "Check a claim", body: "Ask whether something the opponent said is true. Deb searches the web and rules: confirmed, imprecise, false or unverifiable. The ruling moves the score of whoever made the claim. Uses one challenge." },
+      { title: "Search something", body: "Ask a factual question about the motion. Deb answers briefly, favouring neither side. Uses one challenge." },
+      { title: "Ask about the score", body: "Ask why a message got its points. Deb explains from the ledger, without searching. Free." },
+      { title: "Point at a message", body: "Under a message Deb marked as checkable, tap @deb to ask about that one. Each message can be checked once." },
+    ],
+    helpExample: "@deb is that 13% number real?",
     mentionHint: "A message with @deb goes to Deb and does not use your turn.",
     replyingTo: (name: string) => `About ${name}'s message`,
     clearReply: "Cancel",
@@ -207,6 +224,7 @@ export const en = {
     title: "Result",
     wins: (name: string) => `${name} wins`,
     draw: "Draw",
+    open: "See the result",
     stopped: "The debate was stopped by the admin.",
     noScore: "No message was judged.",
     ruling: "Deb's ruling",
@@ -275,6 +293,7 @@ export const en = {
     rounds: "Rounds each",
     challenges: "Challenges each",
     charLimit: "Characters per argument",
+    strictness: "How hard Deb is",
     create: "Create debate",
     created: "Debate created",
     roomsTitle: "Debates",

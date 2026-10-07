@@ -19,9 +19,16 @@ export const pt: Dictionary = {
     home: "Início do Debait",
     mock: "mock",
     loading: "Carregando",
+    close: "Fechar",
   },
 
   fallacies: FALLACIES.pt,
+
+  strictness: {
+    lenient: { name: "Leve", hint: "Notas generosas. Só falácias evidentes, custando 4 pontos por nível de gravidade." },
+    balanced: { name: "Equilibrada", hint: "Notas justas. Falácias custam 8 pontos por nível de gravidade." },
+    strict: { name: "Rigorosa", hint: "Juíza de torneio. Toda falácia conta, 12 pontos por nível de gravidade." },
+  },
 
   quality: {
     logic: "Lógica",
@@ -183,6 +190,15 @@ export const pt: Dictionary = {
     placeholderMention: "Peça para a Deb checar uma afirmação ou pesquisar algo",
     send: "Enviar",
     callBot: "Chamar a @deb",
+    help: "O que a @deb faz",
+    helpLead: "Escreva @deb em qualquer lugar da mensagem e ela vai para a Deb, não para o debate. Nunca gasta a sua vez.",
+    helpItems: [
+      { title: "Checar uma afirmação", body: "Pergunte se algo que o adversário disse é verdade. A Deb pesquisa na web e decide: confirmado, impreciso, falso ou não verificável. A decisão mexe no placar de quem fez a afirmação. Gasta um desafio." },
+      { title: "Pesquisar algo", body: "Faça uma pergunta factual sobre o tema. A Deb responde em poucas palavras, sem favorecer nenhum lado. Gasta um desafio." },
+      { title: "Perguntar sobre o placar", body: "Pergunte por que uma mensagem recebeu aqueles pontos. A Deb explica pelo extrato, sem pesquisar. De graça." },
+      { title: "Apontar uma mensagem", body: "Embaixo de uma mensagem que a Deb marcou como checável, toque em @deb para perguntar sobre aquela. Cada mensagem pode ser checada uma vez." },
+    ],
+    helpExample: "@deb esse número de 13% é real?",
     mentionHint: "Uma mensagem com @deb vai para a Deb e não gasta a sua vez.",
     replyingTo: (name) => `Sobre a mensagem de ${name}`,
     clearReply: "Cancelar",
@@ -205,6 +221,7 @@ export const pt: Dictionary = {
     title: "Resultado",
     wins: (name) => `${name} venceu`,
     draw: "Empate",
+    open: "Ver o resultado",
     stopped: "O debate foi encerrado pelo admin.",
     noScore: "Nenhuma mensagem foi julgada.",
     ruling: "A decisão da Deb",
@@ -273,6 +290,7 @@ export const pt: Dictionary = {
     rounds: "Rodadas para cada",
     challenges: "Desafios para cada",
     charLimit: "Caracteres por argumento",
+    strictness: "Rigor da Deb",
     create: "Criar debate",
     created: "Debate criado",
     roomsTitle: "Debates",
