@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpRight, AtSign } from "lucide-react";
+import { ArrowUp, CheckCheck, Reply } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { Deb } from "@/components/site/deb";
@@ -11,7 +11,7 @@ import { BRAND, MENTION } from "@/lib/brand";
 import { STALE_MS } from "@/lib/debate/limits";
 import type { AskView, MessageView, Seat } from "@/lib/debate/types";
 import { cn } from "@/lib/utils";
-import { sideText, signed, StatusTag } from "./message-item";
+import { Charge, sideText, SourceList, StatusTag } from "./message-item";
 
 /** True once the answer is overdue (the server's stale window), re-rendering when that happens. */
 function useLost(at: number, pending: boolean): boolean {
@@ -42,6 +42,14 @@ export function Mention({ text }: { text: string }) {
   );
 }
 
+/** Scrolls the feed to a message and makes it blink once, so the eye finds it. Ghost copies (inert) are skipped. */
+function showMessage(id: string) {
+  const element = document.querySelector<HTMLElement>(`[data-message="${id}"]:not([inert] *)`);
+  if (!element) return;
+  element.scrollIntoView({ behavior: "smooth", block: "center" });
+  element.animate([{ opacity: 1 }, { opacity: 0.35 }, { opacity: 1 }], { duration: 900, delay: 350, easing: "ease-in-out" });
+}
+
 interface AskItemProps {
   ask: AskView;
   names: Record<Seat, string>;
@@ -61,6 +69,7 @@ export function AskItem({ ask, names, target }: AskItemProps) {
   const ruling = reply?.ruling ?? null;
   const working = pending && !lost;
   const right = ask.seat === "b";
+  const checked = ask.applied && ruling !== null;
 
   return (
     <motion.article
@@ -84,7 +93,7 @@ export function AskItem({ ask, names, target }: AskItemProps) {
           </p>
           {target && (
             <p className="flex items-center gap-1.5 border-t border-border px-4 py-2 text-xs text-muted-foreground">
-              <AtSign className="size-3 shrink-0 text-side-a" />
+              <Reply className={cn("size-3.5 shrink-0 text-bot", right && "-scale-x-100")} />
               <span className="truncate">
                 {t.bot.about(names[target.seat])}: {ruling?.claimQuote || target.text}
               </span>
@@ -106,46 +115,38 @@ export function AskItem({ ask, names, target }: AskItemProps) {
             {pending && lost && <p className="px-3.5 py-2.5 text-muted-foreground">{t.bot.lost}</p>}
             {ask.failed && <p className="px-3.5 py-2.5 text-destructive">{ask.failed === "budget" ? t.bot.budget : t.bot.failed}</p>}
 
-            {reply && (
+            {/* A check that ruled on a message: the verdict, its sources and its points are shown on that message. */}
+            {reply && checked && target && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-3.5 py-2.5">
+                <span className="inline-flex items-center gap-1.5 font-medium">
+                  <CheckCheck className="size-4 text-bot" />
+                  {t.bot.checked}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => showMessage(target.id)}
+                  className="inline-flex items-center gap-1 text-xs text-muted-foreground underline decoration-border underline-offset-4 hover:text-foreground hover:decoration-foreground"
+                >
+                  <ArrowUp className="size-3.5" />
+                  {t.bot.seeMessage(names[target.seat])}
+                </button>
+                {ask.engine === "mock" && <Tag className="text-muted-foreground">{t.common.mock}</Tag>}
+                {ask.charged && <Charge />}
+              </motion.div>
+            )}
+
+            {reply && !checked && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-3 px-3.5 py-3 text-left">
                 <div className="flex flex-wrap items-center gap-2">
                   <Tag className="text-muted-foreground">{t.bot.intent[reply.intent]}</Tag>
                   {ruling && <StatusTag status={ruling.status}>{t.status[ruling.status]}</StatusTag>}
                   {ask.engine === "mock" && <Tag className="text-muted-foreground">{t.common.mock}</Tag>}
+                  {ask.charged && <Charge />}
                 </div>
 
                 <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{reply.text}</p>
 
-                {reply.sources.length > 0 && (
-                  <ul className="flex flex-col gap-1">
-                    {reply.sources.map((source, index) => (
-                      <li key={source.url} className="flex items-baseline gap-2 font-mono text-xs">
-                        <span className="text-muted-foreground">[{index + 1}]</span>
-                        <a
-                          href={source.url}
-                          target="_blank"
-                          rel="noreferrer noopener"
-                          className="inline-flex min-w-0 items-center gap-1 text-side-a underline decoration-side-a/40 underline-offset-4 hover:decoration-side-a"
-                        >
-                          <span className="truncate">{source.title}</span>
-                          <ArrowUpRight className="size-3.5 shrink-0" />
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
-                {/* What the answer did to the score, said in so many words. */}
-                <p className="flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-xs text-muted-foreground">
-                  {ask.applied && ruling && target ? (
-                    <span className={cn("text-sm font-semibold", sideText(target.seat))}>
-                      {t.bot.effect(signed(target.validation?.delta ?? 0), names[target.seat])}
-                    </span>
-                  ) : (
-                    <span>{t.bot.noEffect}</span>
-                  )}
-                  {ask.charged && <span className="uppercase">{t.bot.charged}</span>}
-                </p>
+                <SourceList sources={reply.sources} />
               </motion.div>
             )}
           </div>

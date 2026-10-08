@@ -6,6 +6,7 @@ import {
   type DebateState,
   type LedgerEntry,
   type MessageView,
+  otherSeat,
   type Quality,
   type RoomMeta,
   type Seat,
@@ -24,6 +25,7 @@ export function reduce(room: RoomMeta, events: readonly DebateEvent[]): DebateSt
     seats: {},
     round: 1,
     turn: null,
+    opener: "a",
     messages: [],
     asks: [],
     timeline: [],
@@ -61,6 +63,7 @@ export function reduce(room: RoomMeta, events: readonly DebateEvent[]): DebateSt
 
       case "room.started":
         state.status = "live";
+        state.opener = event.opener ?? "a";
         break;
 
       case "debate.message": {
@@ -151,7 +154,15 @@ export function reduce(room: RoomMeta, events: readonly DebateEvent[]): DebateSt
         // One ruling per message, so a confirmed claim cannot be farmed for points.
         if (ruling && target && !target.validation) {
           const delta = STRICTNESS[room.format.strictness].validation[ruling.status];
-          target.validation = { askId: ask.id, claimQuote: ruling.claimQuote, status: ruling.status, delta };
+          // The check is shown on the message it ruled on; the call itself only says it was done.
+          target.validation = {
+            askId: ask.id,
+            claimQuote: ruling.claimQuote,
+            status: ruling.status,
+            delta,
+            text: event.reply.text,
+            sources: event.reply.sources,
+          };
           ask.applied = true;
           post({
             seq: event.seq,
@@ -190,7 +201,7 @@ export function reduce(room: RoomMeta, events: readonly DebateEvent[]): DebateSt
   const sent = state.messages.length;
   const total = room.format.rounds * 2;
   state.round = Math.min(room.format.rounds, Math.floor(sent / 2) + 1);
-  state.turn = state.status === "live" && sent < total ? (sent % 2 === 0 ? "a" : "b") : null;
+  state.turn = state.status === "live" && sent < total ? (sent % 2 === 0 ? state.opener : otherSeat(state.opener)) : null;
   state.share = meterShare(state.totals.a, state.totals.b);
   state.pendingAsk = state.asks.some((ask) => !ask.reply && !ask.failed);
   state.provisional =

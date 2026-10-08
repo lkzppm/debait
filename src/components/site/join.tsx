@@ -1,13 +1,12 @@
 "use client";
 
-import { ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { CubesBand } from "@/components/cubes/cubes-canvas";
 import { useT } from "@/i18n/LocaleProvider";
 import { cn } from "@/lib/utils";
+import { ActionButton } from "./action-button";
 import { Deb } from "./deb";
-import { Pill } from "./pill";
 
 const LENGTH = 6;
 const ROOM_CODE = /^[a-z]{6}$/;
@@ -102,10 +101,10 @@ export function Join() {
 
           <p className={cn("text-sm", invalid ? "text-destructive" : "text-muted-foreground")}>{invalid ? t.join.invalid : t.join.hint}</p>
 
-          <Pill type="submit" size="lg" disabled={!complete} className="w-full sm:w-auto sm:self-end">
+          {/* Centred, and glowing once the six letters are in. */}
+          <ActionButton ready={complete} className="w-full sm:w-auto sm:self-center">
             {t.join.enter}
-            <ArrowRight />
-          </Pill>
+          </ActionButton>
         </div>
       </form>
     </main>

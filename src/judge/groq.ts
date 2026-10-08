@@ -110,6 +110,81 @@ function toReply(output: MentionOutput, byAlias: Map<string, string>, replyTo: T
   };
 }
 
+/** The answer without its INTENT/STATUS/TARGET/CLAIM header lines. */
+const HEADER = /^\s*(INTENT|STATUS|TARGET|CLAIM)\s*:.*$/gim;
+
+/**
+ * Reads the header lines in code. Groq allows 8,000 tokens a minute and one
+ * search counts about 7,000 (the pages read are input), so a second model call
+ * right after it to sort the answer into fields hits the limit. The headers are
+ * plain lines: the sorting call is only made when they are missing.
+ */
+function readHeaders(answer: string, body: string, sources: { title: string; url: string }[]): MentionOutput | null {
+  const field = (name: string) => new RegExp(`^\\s*${name}\\s*:[ \\t]*(.*)$`, "im").exec(answer)?.[1]?.trim() ?? "";
+  const intent = /^(validate|search|explain|off_topic)\b/i.exec(field("INTENT"))?.[1]?.toLowerCase() as MentionOutput["intent"] | undefined;
+  if (!intent) return null;
+  const status = /^(confirmed|imprecise|false|unverifiable)\b/i.exec(field("STATUS"))?.[1]?.toLowerCase() as MentionOutput["status"] | undefined;
+  const target = /\bm\d+\b/i.exec(field("TARGET"))?.[0]?.toLowerCase() ?? null;
+  const claim = field("CLAIM").replace(/^["“”']+|["“”']+$/g, "").trim() || null;
+  const validate = intent === "validate";
+  return {
+    intent,
+    text: body,
+    status: validate ? (status ?? "unverifiable") : null,
+    targetMessageId: validate ? target : null,
+    claimQuote: validate ? claim : null,
+    sources,
+  };
+}
+
+/** One web-search generation, with the pages it found and opened read from the raw response. */
+async function searchStep(input: MentionInput, base: { roomId: string; modelId: string }, user: string, retry: boolean) {
+  const p = prompts(input.locale);
+  const traced = mentionModelWithTrace({ forceSearch: retry });
+  const options = {
+    ...base,
+    model: traced.model,
+    instructions: retry ? `${p.mentionSearchSystem(input)}\n\n${p.mentionRetry}` : p.mentionSearchSystem(input),
+    prompt: user,
+    maxOutputTokens: 1400,
+  };
+  const search = await tracked(options, () =>
+    generateText({
+      model: options.model,
+      instructions: options.instructions,
+      prompt: options.prompt,
+      tools: { browser_search: groq().tools.browserSearch({}) },
+      // "auto" for the SDK; a retry requires the search in the request itself (see `mentionModelWithTrace`).
+      toolChoice: "auto",
+      maxOutputTokens: options.maxOutputTokens,
+      // A minute's token limit clears within seconds of a search: wait and try again rather than fail.
+      maxRetries: 3,
+      providerOptions: PROVIDER_OPTIONS,
+    }),
+  );
+  const trace = await traced.trace();
+  // The answer cites results by number (【3†L11-L15】): those pages, plus the ones
+  // the model opened, are its sources; failing both, the first results found.
+  const cited = [...search.text.matchAll(/【(\d+)†/g)].map((match) => trace.results[Number(match[1])]).filter((hit) => hit !== undefined);
+  const seen = new Set<string>();
+  const opened = [...trace.opened, ...cited, ...(trace.opened.length + cited.length > 0 ? [] : trace.results.slice(0, 3))].filter(
+    (hit) => !seen.has(hit.url) && seen.add(hit.url),
+  );
+  // The room shows plain text: citation marks and markdown emphasis go.
+  const answer = search.text
+    .replace(/【[^】]*】/g, "")
+    .replace(/\*\*|__/g, "")
+    .replace(/^[ \t]*[*-][ \t]+/gm, "• ")
+    .replace(/[ \t]+\n/g, "\n")
+    .trim();
+  const body = answer.replace(HEADER, "").trim();
+  const intent = /^\s*INTENT\s*:\s*(\w+)/im.exec(answer)?.[1]?.toLowerCase();
+  if (process.env.JUDGE_DEBUG) {
+    console.error("[groq] search step", { retry, finishReason: search.finishReason, found: trace.results.length, opened: trace.opened.length, cited: cited.length, sources: opened, text: answer });
+  }
+  return { answer, body, opened, found: trace.results.length, wantsWeb: intent === "validate" || intent === "search" };
+}
+
 async function answerMention(input: MentionInput): Promise<EngineResult<BotReply>> {
   const p = prompts(input.locale);
   const { lines, byAlias } = aliasMessages(input);
@@ -131,46 +206,31 @@ async function answerMention(input: MentionInput): Promise<EngineResult<BotReply
   // Step 1: free text with Groq's built-in web search. The 20b searches well but, in
   // CV-AI's tests, could not also produce the final JSON in the same call. The
   // pages it saw come from the raw response (the provider drops them).
-  const traced = mentionModelWithTrace();
-  const searchOptions = { ...base, model: traced.model, instructions: p.mentionSearchSystem(input), prompt: user, maxOutputTokens: 1400 };
-  const search = await tracked(searchOptions, () =>
-    generateText({
-      model: searchOptions.model,
-      instructions: searchOptions.instructions,
-      prompt: searchOptions.prompt,
-      tools: { browser_search: groq().tools.browserSearch({}) },
-      toolChoice: "auto",
-      maxOutputTokens: searchOptions.maxOutputTokens,
-      maxRetries: 1,
-      providerOptions: PROVIDER_OPTIONS,
-    }),
-  );
-  const trace = await traced.trace();
-  // The answer cites results by number (【3†L11-L15】): those pages, plus the ones
-  // the model opened, are its sources; failing both, the first results found.
-  const cited = [...search.text.matchAll(/【(\d+)†/g)].map((match) => trace.results[Number(match[1])]).filter((hit) => hit !== undefined);
-  const seen = new Set<string>();
-  const opened = [...trace.opened, ...cited, ...(trace.opened.length + cited.length > 0 ? [] : trace.results.slice(0, 3))].filter(
-    (hit) => !seen.has(hit.url) && seen.add(hit.url),
-  );
-  const answer = search.text.replace(/【[^】]*】/g, "").replace(/[ \t]+\n/g, "\n").trim();
-  if (process.env.JUDGE_DEBUG) {
-    console.error("[groq] search step", { finishReason: search.finishReason, found: trace.results.length, opened: trace.opened.length, cited: cited.length, sources: opened, text: answer });
-  }
+  // The 20b sometimes writes only the header lines and stops without searching
+  // or answers from memory (seen 2026-10-07 on "pesquise sobre..."): then it gets
+  // one more try with the search required. A second empty answer is a failure, not a blank bubble.
+  let attempt = await searchStep(input, base, user, false);
+  if (!attempt.body || (attempt.wantsWeb && attempt.found === 0)) attempt = await searchStep(input, base, user, true);
+  if (!attempt.body) throw new JudgeError("invalid_output", "the search step wrote no answer");
+  const { answer, opened } = attempt;
 
-  // Step 2: a small structured call that only sorts that answer into fields.
-  const output = await structured(
-    {
-      ...base,
-      instructions: p.classifySystem(lines.map((line) => line.alias)),
-      prompt: p.classifyUser(answer, opened.map((source) => source.url)),
-      maxOutputTokens: 900,
-    },
-    mentionSchema,
-  );
+  // Step 2: the fields come from the header lines; only without them, a small structured call sorts the answer.
+  const output =
+    readHeaders(answer, attempt.body, opened) ??
+    (await structured(
+      {
+        ...base,
+        instructions: p.classifySystem(lines.map((line) => line.alias)),
+        prompt: p.classifyUser(answer, opened.map((source) => source.url)),
+        maxOutputTokens: 900,
+      },
+      mentionSchema,
+    ));
   // Pages the search tool really opened win over URLs the model wrote down.
   const sources = opened.length > 0 ? opened.slice(0, 5) : output.sources;
-  return { value: toReply({ ...output, sources }, byAlias, input.replyTo), engine: "groq", model: MENTION_MODEL_ID };
+  // The sorting call may drop the text; the search step's own words are the answer then.
+  const text = output.text.trim() || attempt.body;
+  return { value: toReply({ ...output, text, sources }, byAlias, input.replyTo), engine: "groq", model: MENTION_MODEL_ID };
 }
 
 async function writeRuling(input: RulingInput): Promise<EngineResult<Ruling>> {

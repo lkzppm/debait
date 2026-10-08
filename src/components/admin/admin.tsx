@@ -212,7 +212,7 @@ function Rooms({ rooms, onChanged }: { rooms: RoomSummary[]; onChanged: () => vo
                   <td className="py-2.5 pr-3">
                     <span
                       className={cn(
-                        "rounded-full border px-2 py-0.5 text-xs",
+                        "border px-2 py-0.5 text-xs",
                         room.status === "live" ? "border-side-a/60 text-side-a" : "border-border text-muted-foreground",
                       )}
                     >

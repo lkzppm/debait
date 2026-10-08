@@ -54,7 +54,7 @@ Room id: 6 lowercase letters without `i`, `l`, `o`. Letters only on purpose: the
 | Event | Emitted when |
 |---|---|
 | `room.joined` | a seat is taken (seat, name) |
-| `room.started` | both seats are taken |
+| `room.started` | both seats are taken; carries `opener`, Deb's coin flip for who sends the first argument (2026-10-07; a log without it means side A opened) |
 | `debate.message` | a debater posts an argument |
 | `debate.judgement` / `debate.judgement_failed` | the judge finished, or gave up, on a message |
 | `bot.asked` | a debater mentions the bot (text, `replyTo`) |

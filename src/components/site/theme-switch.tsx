@@ -20,7 +20,7 @@ export function ThemeSwitch({ className }: { className?: string }) {
       aria-label={label}
       title={label}
       className={cn(
-        "relative grid size-8 shrink-0 place-items-center overflow-hidden rounded-full border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
+        "relative grid size-8 shrink-0 place-items-center overflow-hidden border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
         className,
       )}
     >

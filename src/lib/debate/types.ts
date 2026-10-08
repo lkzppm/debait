@@ -99,7 +99,8 @@ export interface Ruling {
 
 export type DebateEventBody =
   | { type: "room.joined"; seat: Seat; name: string }
-  | { type: "room.started" }
+  /** `opener` is Deb's coin flip: who sends the first argument. Rooms started before the coin have none: side A opened. */
+  | { type: "room.started"; opener?: Seat }
   | { type: "debate.message"; id: string; seat: Seat; text: string }
   | { type: "debate.judgement"; messageId: string; judgement: Judgement; engine: EngineKind; model: string }
   | { type: "debate.judgement_failed"; messageId: string; error: string }
@@ -148,8 +149,15 @@ export interface MessageView {
   /** Last error, while there is still no judgement. */
   failed: string | null;
   engine: EngineKind | null;
-  /** The bot's ruling on a claim of this message, once someone asked. */
-  validation: { askId: string; claimQuote: string; status: ValidationStatus; delta: number } | null;
+  /** The bot's ruling on a claim of this message, once someone asked, with the answer and sources behind it. */
+  validation: {
+    askId: string;
+    claimQuote: string;
+    status: ValidationStatus;
+    delta: number;
+    text: string;
+    sources: Source[];
+  } | null;
 }
 
 export interface AskView {
@@ -195,6 +203,8 @@ export interface DebateState {
   round: number;
   /** Whose turn it is while the debate is live. */
   turn: Seat | null;
+  /** Who opens the debate, by Deb's coin flip; turns alternate from them. */
+  opener: Seat;
   messages: MessageView[];
   asks: AskView[];
   timeline: TimelineItem[];

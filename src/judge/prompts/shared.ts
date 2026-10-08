@@ -3,6 +3,9 @@ import type { Locale } from "@/i18n/locales";
 import type { Seat } from "@/lib/debate/types";
 import type { MentionInput, TranscriptLine } from "../types";
 
+/** Today's date for the search prompt, so "the most recent" has a year to aim at. */
+export const today = () => new Date().toISOString().slice(0, 10);
+
 /** The judge only ever sees "A" and "B". */
 export const side = (seat: Seat) => (seat === "a" ? "A" : "B");
 
