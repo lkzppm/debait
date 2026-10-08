@@ -260,7 +260,8 @@ export function CreateForm({ onCreated }: { onCreated?: () => void }) {
       </div>
 
       <div className="flex min-w-0 flex-col gap-4">
-        <div className="grid grid-cols-2 gap-4">
+        {/* Aligned on the steppers: a label that wraps to two lines must not push its stepper down. */}
+        <div className="grid grid-cols-2 items-end gap-4">
           <Field label={t.admin.rounds}>
             <Stepper value={rounds} min={1} max={6} onChange={setRounds} />
           </Field>
