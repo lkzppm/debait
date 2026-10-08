@@ -151,6 +151,7 @@ export const en = {
     waitingOpponent: "Waiting for the opponent",
     waitingBoth: "Waiting for the debaters",
     copyLink: "Copy link",
+    share: "Share room",
     copyCode: "Copy code",
     /** The format, one fact at a time, each under its own icon. */
     coin: "Deb flips a coin for who opens",

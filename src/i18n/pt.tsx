@@ -147,6 +147,7 @@ export const pt: Dictionary = {
     waitingOpponent: "Aguardando o oponente",
     waitingBoth: "Aguardando os debatedores",
     copyLink: "Copiar link",
+    share: "Compartilhar sala",
     copyCode: "Copiar código",
     /** The format, one fact at a time, each under its own icon. */
     coin: "A Deb tira cara ou coroa para ver quem abre",
