@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { DebateEvent } from "./debate/types";
+import type { DebateEvent, Seat } from "./debate/types";
 
 export type Connection = "connecting" | "open" | "reconnecting" | "gone";
 
@@ -10,6 +10,8 @@ interface RoomEvents {
   /** The replay of past events is over; what is on screen is current. */
   ready: boolean;
   connection: Connection;
+  /** Seats typing right now (presence, outside the log). */
+  typing: Seat[];
 }
 
 /**
@@ -19,7 +21,7 @@ interface RoomEvents {
  * drops or the server recycles it.
  */
 export function useRoomEvents(roomId: string): RoomEvents {
-  const [state, setState] = useState<RoomEvents>({ events: [], ready: false, connection: "connecting" });
+  const [state, setState] = useState<RoomEvents>({ events: [], ready: false, connection: "connecting", typing: [] });
 
   useEffect(() => {
     const source = new EventSource(`/api/rooms/${roomId}/events`);
@@ -38,6 +40,15 @@ export function useRoomEvents(roomId: string): RoomEvents {
         event.seq === previous.events.length ? { ...previous, events: [...previous.events, event] } : previous,
       );
     };
+
+    source.addEventListener("typing", (message) => {
+      try {
+        const typing = JSON.parse((message as MessageEvent<string>).data) as Seat[];
+        setState((previous) => ({ ...previous, typing }));
+      } catch {
+        // A malformed frame: keep what we had.
+      }
+    });
 
     source.addEventListener("ready", () => setState((previous) => ({ ...previous, ready: true })));
 

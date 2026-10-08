@@ -28,7 +28,7 @@ pnpm exec vgpu check src/components/cubes/cubes.wgsl
 ## Rules
 
 - The model observes, the code scores: points, the meter and the winner are computed in `src/lib/debate/`, never taken from model output. Whatever an engine returns goes through `normalizeJudgement` / `normalizeReply` before it enters the log.
-- A room is an append-only event log, and `reduce()` in `src/lib/debate/reducer.ts` is the only place state is derived, on the server and in the browser. Add a feature by adding an event and a reducer case, not by keeping state elsewhere.
+- A room is an append-only event log, and `reduce()` in `src/lib/debate/reducer.ts` is the only place state is derived, on the server and in the browser. Add a feature by adding an event and a reducer case, not by keeping state elsewhere. The one exception is presence (who is typing, 2026-10-08): it expires in seconds, so it lives in a self-expiring key and travels as a `typing` frame on the SSE stream, never in the log.
 - The meter means "who is arguing better", never "who is right". Keep that wording in UI and docs.
 - Debater text is untrusted data in every prompt, mentions included.
 - Every model call goes through `checkBudget` and `addUsage` (`src/lib/usage.ts`). The free tier is 8,000 tokens/min and 200,000 tokens/day per model: use the mock (`JUDGE_ENGINE=mock`) for UI work, be frugal when testing against Groq, and spend nothing on Friday.

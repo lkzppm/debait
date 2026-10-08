@@ -2,7 +2,7 @@
 
 import { ArrowUp, AtSign, Ban, CornerDownLeft, Globe, Info, Receipt, Reply, SearchCheck, TriangleAlert, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useLayoutEffect, useState, type RefObject } from "react";
+import { useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { Deb } from "@/components/site/deb";
 import { Dialog } from "@/components/site/dialog";
 import { Pill, Tag } from "@/components/site/pill";
@@ -32,6 +32,9 @@ interface ComposerProps {
   inputRef: RefObject<HTMLTextAreaElement | null>;
 }
 
+/** Under the server's typing mark (4 s), so the dots never blink off between keystrokes. */
+const TYPING_PING_MS = 2500;
+
 /**
  * One field for both kinds of move. Text that mentions the bot goes to the
  * bot and can be sent at any time; anything else is an argument and needs
@@ -42,6 +45,8 @@ export function Composer({ meta, state, identity, names, text, onText, replyTo, 
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<ClientError | null>(null);
   const [help, setHelp] = useState(false);
+  // When this browser last told the room it is typing; pings go out at most every few seconds.
+  const lastPing = useRef(0);
 
   // The field grows with what is written, so it never scrolls inside itself. Only past half the
   // screen (a long message on a phone) does it stop and scroll, so the debate stays in view.
@@ -194,6 +199,10 @@ export function Composer({ meta, state, identity, names, text, onText, replyTo, 
           onChange={(event) => {
             onText(event.target.value);
             setError(null);
+            if (event.target.value.trim() && Date.now() - lastPing.current > TYPING_PING_MS) {
+              lastPing.current = Date.now();
+              void api(`/api/rooms/${meta.id}/typing`, { body: { token: identity.token } });
+            }
           }}
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
