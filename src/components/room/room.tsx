@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Receipt, Trophy } from "lucide-react";
+import { ArrowLeft, Info, Receipt, Trophy } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { LEVEL_FACE } from "@/components/admin/level-picker";
@@ -20,11 +20,13 @@ import { useIdentity } from "@/lib/identity";
 import { useRoomEvents, type Connection } from "@/lib/use-room-events";
 import { cn } from "@/lib/utils";
 import { AskItem } from "./ask-item";
+import { CoinFlip } from "./coin-flip";
 import { Composer } from "./composer";
 import { Lobby } from "./lobby";
 import { MessageItem } from "./message-item";
 import { Meter } from "./meter";
 import { Result } from "./result";
+import { RoomFacts } from "./room-facts";
 import { ScorePanel } from "./score-panel";
 
 const CONNECTION_TONE: Record<Connection, string> = {
@@ -49,6 +51,7 @@ export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
   // The ledger and the result are popups, closed until asked for.
   const [ledgerOpen, setLedgerOpen] = useState(false);
   const [resultOpen, setResultOpen] = useState(false);
+  const [rulesOpen, setRulesOpen] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const feedRef = useRef<HTMLDivElement>(null);
 
@@ -78,14 +81,8 @@ export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
     }
   }, [activity, state.status]);
 
-  // The result pops up by itself when the debate ends, and again when the written ruling lands.
+  // At the end the meter shows the winner in brief, with a trophy that opens the full result.
   const finished = state.status === "finished";
-  const resultStage = finished ? (state.ruling ? "ruling" : "finished") : null;
-  const [shownStage, setShownStage] = useState<string | null>(null);
-  if (ready && resultStage && resultStage !== shownStage) {
-    setShownStage(resultStage);
-    setResultOpen(true);
-  }
 
   const askAbout = useCallback((messageId: string) => {
     setReplyTo(messageId);
@@ -120,9 +117,22 @@ export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
         <header className="flex h-12 shrink-0 items-center gap-2 border border-border bg-popover/95 px-3 sm:h-14 sm:gap-4 sm:px-4">
           <Logo label={t.common.home} short className="text-xl sm:text-2xl" />
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-sm sm:text-base" title={meta.motion}>
-              {meta.motion}
-            </h1>
+            <div className="flex min-w-0 items-center gap-1.5">
+              <h1 className="truncate text-sm sm:text-base" title={meta.motion}>
+                {meta.motion}
+              </h1>
+              {/* The room's rules, beside the motion they are for. */}
+              <button
+                type="button"
+                onClick={() => setRulesOpen(true)}
+                aria-haspopup="dialog"
+                aria-label={t.room.rules}
+                title={t.room.rules}
+                className="grid size-6 shrink-0 place-items-center text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <Info className="size-4" />
+              </button>
+            </div>
             <p className="eyebrow flex items-center gap-2 text-muted-foreground">
               <span className={cn("size-1.5", CONNECTION_TONE[connection])} />
               <span className="truncate">
@@ -137,7 +147,7 @@ export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
             role="img"
             aria-label={level}
             title={`${level}. ${t.strictness[meta.format.strictness].hint}`}
-            className="grid size-8 shrink-0 place-items-center rounded-full border border-input text-bot"
+            className="grid size-8 shrink-0 place-items-center border border-input text-bot"
           >
             <Deb mood={LEVEL_FACE[meta.format.strictness]} className="size-4" />
           </span>
@@ -145,12 +155,6 @@ export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
             <Tag className="border-warning/50 text-warning" title={t.room.mockBanner}>
               {t.common.mock}
             </Tag>
-          )}
-          {finished && (
-            <Pill type="button" size="sm" onClick={() => setResultOpen(true)} aria-haspopup="dialog">
-              <Trophy />
-              <span className="hidden sm:inline">{t.result.title}</span>
-            </Pill>
           )}
           <LocaleSwitch />
           <ThemeSwitch className="hidden sm:grid" />
@@ -175,7 +179,15 @@ export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
           </div>
         ) : (
           <>
-            <Meter meta={meta} state={state} names={names} pulse={state.ledger.length} pulseDir={pulseDir} glitch={glitch} />
+            <Meter
+              meta={meta}
+              state={state}
+              names={names}
+              pulse={state.ledger.length}
+              pulseDir={pulseDir}
+              glitch={glitch}
+              onResult={() => setResultOpen(true)}
+            />
 
             <main className="relative flex min-h-0 min-w-0 flex-1 flex-col gap-3">
               {/* Floating over the feed's top right corner, as Deb's help floats over its bottom one. */}
@@ -185,7 +197,7 @@ export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
                 aria-haspopup="dialog"
                 aria-label={t.panel.ledger}
                 title={t.panel.ledger}
-                className="absolute top-2 right-2 z-10 grid size-10 place-items-center rounded-full border border-border bg-popover shadow-lg shadow-black/20 transition-[background-color,scale] hover:scale-110 hover:bg-accent sm:right-3"
+                className="absolute -top-1 right-2 z-10 grid size-10 sm:-top-1.5 place-items-center border border-border bg-popover shadow-lg shadow-black/20 transition-[background-color,scale] hover:scale-110 hover:bg-accent sm:right-3"
               >
                 <Receipt className="size-5" />
               </button>
@@ -199,7 +211,7 @@ export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
                 )}
               >
                   {state.timeline.length === 0 && live && (
-                    <p className="m-auto text-lg text-muted-foreground">{t.feed.opens(names.a)}</p>
+                    <CoinFlip opener={state.opener} names={names} />
                   )}
                   {state.timeline.map((item) =>
                     item.kind === "message" ? (
@@ -229,10 +241,13 @@ export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
               {finished ? (
                 <div className="panel flex flex-wrap items-center justify-center gap-3 p-3 text-sm text-muted-foreground">
                   <span>{t.composer.finished}</span>
-                  <Pill type="button" variant="outline" size="sm" onClick={() => setResultOpen(true)}>
-                    <Trophy />
-                    {t.result.open}
-                  </Pill>
+                  {/* With no winner (stopped before any score) the meter has no trophy: the result opens from here. */}
+                  {!state.winner && (
+                    <Pill type="button" variant="outline" size="sm" onClick={() => setResultOpen(true)}>
+                      <Trophy />
+                      {t.result.open}
+                    </Pill>
+                  )}
                 </div>
               ) : identity ? (
                 <Composer
@@ -257,6 +272,16 @@ export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
       <Dialog open={ledgerOpen} onOpenChange={setLedgerOpen} title={t.panel.ledger} className="max-w-lg">
         <div className="p-6 sm:p-8">
           <ScorePanel meta={meta} state={state} names={names} />
+        </div>
+      </Dialog>
+
+      <Dialog open={rulesOpen} onOpenChange={setRulesOpen} title={t.room.rules} className="max-w-md">
+        <div className="flex flex-col gap-4 p-6 sm:p-8">
+          <div className="pr-8">
+            <p className="eyebrow text-muted-foreground">{t.room.rules}</p>
+            <h2 className="mt-2 text-xl font-medium tracking-tight text-balance">{meta.motion}</h2>
+          </div>
+          <RoomFacts meta={meta} stacked />
         </div>
       </Dialog>
 

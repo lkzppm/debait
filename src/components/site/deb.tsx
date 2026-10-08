@@ -1,15 +1,18 @@
 import { cn } from "@/lib/utils";
 
 // Deb, eight cells wide: a small pixel referee with a bow in her hair, two
-// loops and a knot. "#" is a lit cell, "b" is the bow where it covers the head.
+// loops and a knot. "#" is a lit cell, "b" is the bow's pink (the bow where it
+// covers the head, or a blush).
 const FACES = {
   idle: ["...bb.bb", ".##bbbbb", "#.#bb.bb", "#.###.#.", "#######.", "##...##.", "#######.", ".#...#.."],
   // Eyes up and to the side: looking something up.
   busy: ["...bb.bb", ".##bbbbb", "#.#bb.bb", "#######.", "#######.", "###.###.", "#######.", ".#...#.."],
   // Brows down: she saw that.
   stern: ["...bb.bb", ".##bbbbb", "#..bb.bb", "#.###.#.", "#######.", "#.....#.", "#######.", ".#...#.."],
-  // The three verdicts on a message: a smile, the flat idle mouth, a frown with brows.
-  good: ["...bb.bb", ".##bbbbb", "###bb#bb", "#.###.#.", "#######.", "#.###.#.", "##...##.", ".#...#.."],
+  // The three verdicts on a message: a grin, the flat idle mouth, a frown with brows.
+  // The grin is wide on top and narrow below, the chin closes under it, and the
+  // cheeks blush in the bow's pink: a smile has to read at 16px.
+  good: ["...bb.bb", ".##bbbbb", "###bb#bb", "#.###.#.", "b#####b.", "#.....#.", "##...##.", ".#####.."],
   bad: ["...bb.bb", ".##bbbbb", "#..bb.bb", "#.###.#.", "#######.", "##...##.", "#.###.#.", ".#...#.."],
 } as const;
 

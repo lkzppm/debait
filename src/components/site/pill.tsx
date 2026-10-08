@@ -2,7 +2,7 @@ import { Slot } from "radix-ui";
 import { cn } from "@/lib/utils";
 
 const VARIANTS = {
-  /** The one loud button on a screen: solid purple. */
+  /** The one loud button on a screen: solid blue (side A). */
   primary: "bg-side-a text-ink hover:bg-side-a-deep",
   green: "bg-side-b text-ink hover:bg-side-b-deep",
   outline: "border border-input text-foreground hover:bg-accent",
@@ -23,13 +23,13 @@ interface PillProps extends React.ComponentProps<"button"> {
   asChild?: boolean;
 }
 
-/** The app's button: fully rounded, flat, purple when it is the main action. */
+/** The app's button: square, flat, blue when it is the main action. Only sliders are pills. */
 export function Pill({ variant = "primary", size = "md", asChild, className, ...props }: PillProps) {
   const Component = asChild ? Slot.Root : "button";
   return (
     <Component
       className={cn(
-        "inline-flex shrink-0 items-center justify-center rounded-full font-medium whitespace-nowrap transition-colors outline-none select-none focus-visible:ring-2 focus-visible:ring-ring/60 disabled:pointer-events-none disabled:opacity-40 [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "inline-flex shrink-0 items-center justify-center font-medium whitespace-nowrap transition-colors outline-none select-none focus-visible:ring-2 focus-visible:ring-ring/60 disabled:pointer-events-none disabled:opacity-40 [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         VARIANTS[variant],
         SIZES[size],
         className,
@@ -39,12 +39,12 @@ export function Pill({ variant = "primary", size = "md", asChild, className, ...
   );
 }
 
-/** A small rounded label: "✓ CONFIRMED", "MOCK". */
+/** A small square label: "✓ CONFIRMED", "MOCK". */
 export function Tag({ className, ...props }: React.ComponentProps<"span">) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border border-input px-2 py-0.5 text-[10px] font-semibold tracking-[0.12em] whitespace-nowrap uppercase",
+        "inline-flex items-center gap-1 border border-input px-2 py-0.5 text-[10px] font-semibold tracking-[0.12em] whitespace-nowrap uppercase",
         className,
       )}
       {...props}

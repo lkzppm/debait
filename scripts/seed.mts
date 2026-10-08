@@ -11,7 +11,8 @@
  *
  * It signs in with the admin password (ADMIN_PASSWORD, or "admin" in
  * development), creates the room, seats Ana and Bia, posts their arguments
- * in turn, has Bia call @deb about Ana's first claim, and prints the link
+ * in turn from whoever won Deb's coin flip, has the other call @deb about the
+ * opener's first message, and prints the link
  * plus a line to paste in the browser console to act as either debater.
  * By default it stops with two rounds left, so the room is still live.
  */
@@ -97,19 +98,33 @@ async function main() {
   };
   console.log(`seated ${SCRIPT.names.a} and ${SCRIPT.names.b}`);
 
+  // Deb's coin decides who opens: try Ana first, and if it is not her turn, Bia opens.
+  const opening = await call<{ id: string }>(`/api/rooms/${id}/messages`, { token: seats.a.token, text: SCRIPT.messages[0] }).then(
+    (message) => ({ seat: "a" as const, message }),
+    async () => ({ seat: "b" as const, message: await call<{ id: string }>(`/api/rooms/${id}/messages`, { token: seats.b.token, text: SCRIPT.messages[1] }) }),
+  );
+  const opener = opening.seat;
+  const answerer = opener === "a" ? "b" : "a";
+  console.log(`coin: ${SCRIPT.names[opener]} opens`);
+  // Each side keeps its own lines (A favor: even ones, Contra: odd ones), in turn order from the opener.
+  const lines = { a: SCRIPT.messages.filter((_, index) => index % 2 === 0), b: SCRIPT.messages.filter((_, index) => index % 2 === 1) };
+
   // Two rounds, or all three with --full. A pause after each message lets the
   // mock judge finish, so the turns and the ledger arrive in order.
   const count = full ? SCRIPT.messages.length : SCRIPT.messages.length - 2;
-  let firstMessageId = "";
-  for (let index = 0; index < count; index++) {
-    const seat = index % 2 === 0 ? "a" : "b";
-    const message = await call<{ id: string }>(`/api/rooms/${id}/messages`, { token: seats[seat].token, text: SCRIPT.messages[index] });
-    if (index === 0) firstMessageId = message.id;
-    console.log(`${SCRIPT.names[seat]}: ${SCRIPT.messages[index].slice(0, 60)}…`);
+  const firstMessageId = opening.message.id;
+  console.log(`${SCRIPT.names[opener]}: ${lines[opener][0].slice(0, 60)}…`);
+  await sleep(pause);
+  for (let index = 1; index < count; index++) {
+    const seat = index % 2 === 0 ? opener : answerer;
+    const text = lines[seat][Math.floor(index / 2)];
+    await call(`/api/rooms/${id}/messages`, { token: seats[seat].token, text });
+    console.log(`${SCRIPT.names[seat]}: ${text.slice(0, 60)}…`);
     await sleep(pause);
     if (index === 1) {
-      await call(`/api/rooms/${id}/mention`, { token: seats.b.token, text: `@deb ${SCRIPT.ask}`, replyTo: firstMessageId });
-      console.log(`${SCRIPT.names.b} called @deb about ${SCRIPT.names.a}'s first message`);
+      // The answerer asks Deb about the opener's first message.
+      await call(`/api/rooms/${id}/mention`, { token: seats[answerer].token, text: `@deb ${SCRIPT.ask}`, replyTo: firstMessageId });
+      console.log(`${SCRIPT.names[answerer]} called @deb about ${SCRIPT.names[opener]}'s first message`);
       await sleep(Math.max(2500, pause));
     }
   }

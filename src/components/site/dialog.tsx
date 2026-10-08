@@ -53,7 +53,7 @@ export function Dialog({ open, onOpenChange, title, children, className }: Dialo
                 <Radix.Title className="sr-only">{title}</Radix.Title>
                 <Radix.Close
                   aria-label={t.common.close}
-                  className="absolute top-3 right-3 z-10 grid size-9 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  className="absolute top-3 right-3 z-10 grid size-9 place-items-center text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                 >
                   <X className="size-4" />
                 </Radix.Close>

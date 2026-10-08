@@ -1,8 +1,8 @@
 "use client";
 
-import { ArrowUp, AtSign, CornerDownLeft, Globe, Info, Receipt, Reply, SearchCheck, X } from "lucide-react";
+import { ArrowUp, AtSign, Ban, CornerDownLeft, Globe, Info, Receipt, Reply, SearchCheck, TriangleAlert, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useState, type RefObject } from "react";
+import { useLayoutEffect, useState, type RefObject } from "react";
 import { Deb } from "@/components/site/deb";
 import { Dialog } from "@/components/site/dialog";
 import { Pill, Tag } from "@/components/site/pill";
@@ -14,7 +14,7 @@ import type { DebateState, RoomMeta, Seat } from "@/lib/debate/types";
 import type { Identity } from "@/lib/identity";
 import { cn } from "@/lib/utils";
 import { Mention } from "./ask-item";
-import { sideText } from "./message-item";
+import { Charge, sideText } from "./message-item";
 
 /** One per help item, in order: check a claim, search, the score, point at a message. */
 const HELP_ICONS = [SearchCheck, Globe, Receipt, Reply];
@@ -42,6 +42,19 @@ export function Composer({ meta, state, identity, names, text, onText, replyTo, 
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<ClientError | null>(null);
   const [help, setHelp] = useState(false);
+
+  // The field grows with what is written, so it never scrolls inside itself. Only past half the
+  // screen (a long message on a phone) does it stop and scroll, so the debate stays in view.
+  useLayoutEffect(() => {
+    const field = inputRef.current;
+    if (!field) return;
+    field.style.height = "auto";
+    // scrollHeight leaves out the border, which the box's height includes.
+    const needed = field.scrollHeight + field.offsetHeight - field.clientHeight;
+    const cap = window.innerHeight / 2;
+    field.style.height = `${Math.min(needed, cap)}px`;
+    field.style.overflowY = needed > cap ? "auto" : "hidden";
+  }, [text, inputRef]);
   // The tool open in the help's list.
   const [tool, setTool] = useState(0);
 
@@ -55,10 +68,14 @@ export function Composer({ meta, state, identity, names, text, onText, replyTo, 
   const opponent = names[seat === "a" ? "b" : "a"];
   const current = t.composer.helpItems[tool];
 
+  // Characters left: the warning shows within the last tenth of the limit (at least 30).
+  const left = limit - trimmed.length;
+  const nearLimit = left <= Math.max(30, Math.round(limit / 10));
+
   const blocked = isMention ? state.pendingAsk : !myTurn;
   const canSend = !sending && trimmed.length > 0 && trimmed.length <= limit && !blocked;
 
-  /** From the help popup: starts a call to the bot in the field. */
+  /** From the help popup or the calls counter: starts a call to the bot in the field. */
   const tryMention = () => {
     setHelp(false);
     if (!mentionsBot(text)) onText(`${MENTION} ${text}`.trimEnd() + " ");
@@ -96,6 +113,35 @@ export function Composer({ meta, state, identity, names, text, onText, replyTo, 
 
   return (
     <div className={cn("relative border border-l-2 border-border bg-card p-2.5 sm:p-3", isMention ? "border-l-bot" : accent)}>
+      {/* Floating over the feed's bottom left corner: the @deb calls left, one @ each. Spending one
+          pops it away; tapping the counter starts a call. */}
+      {meta.format.challenges > 0 && (
+        <button
+          type="button"
+          onClick={tryMention}
+          aria-label={`${t.composer.callBot}: ${t.composer.challenges(challenges)}`}
+          title={t.composer.challenges(challenges)}
+          className="absolute bottom-full left-2 mb-2.5 flex h-10 items-center gap-0.5 border border-border bg-popover px-3 shadow-lg shadow-black/20 transition-[background-color,scale] hover:scale-105 hover:bg-accent sm:left-3"
+        >
+          <AnimatePresence initial={false} mode="popLayout">
+            {Array.from({ length: challenges }, (_, index) => (
+              <motion.span
+                key={index}
+                layout
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 2.2, opacity: 0, y: -14, rotate: 25, filter: "blur(2px)" }}
+                transition={{ type: "spring", stiffness: 420, damping: 22 }}
+                className={cn("grid place-items-center", sideText(seat))}
+              >
+                <AtSign className="size-5" />
+              </motion.span>
+            ))}
+          </AnimatePresence>
+          {challenges === 0 && <AtSign className="size-5 text-muted-foreground/40" />}
+        </button>
+      )}
+
       {/* Floating over the feed's bottom right corner: what a message with @deb can do. */}
       <button
         type="button"
@@ -104,10 +150,30 @@ export function Composer({ meta, state, identity, names, text, onText, replyTo, 
         aria-expanded={help}
         aria-label={t.composer.help}
         title={t.composer.help}
-        className="absolute right-2 bottom-full mb-2.5 grid size-10 place-items-center rounded-full border border-bot/30 bg-popover text-bot shadow-lg shadow-black/20 transition-[background-color,scale] hover:scale-110 hover:bg-accent sm:right-3"
+        className="absolute right-2 bottom-full mb-2.5 grid size-10 place-items-center border border-bot/30 bg-popover text-bot shadow-lg shadow-black/20 transition-[background-color,scale] hover:scale-110 hover:bg-accent sm:right-3"
       >
         <Info className="size-5" />
       </button>
+
+      {/* No counter: near the limit a warning sits on the field's top edge, the error colour once it is reached. */}
+      <AnimatePresence>
+        {nearLimit && (
+          <motion.p
+            role="status"
+            initial={{ opacity: 0, y: 6, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 6, scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 500, damping: 32 }}
+            className={cn(
+              "absolute top-0 left-1/2 z-10 inline-flex -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 border bg-popover px-2.5 py-0.5 font-mono text-xs whitespace-nowrap shadow-md",
+              left <= 0 ? "border-destructive/60 text-destructive" : "border-warning/60 text-warning",
+            )}
+          >
+            {left > 0 ? <TriangleAlert className="size-3.5 shrink-0" /> : <Ban className="size-3.5 shrink-0" />}
+            {left > 0 ? t.composer.charsLeft(left) : left === 0 ? t.composer.charsLimit(limit) : t.composer.charsOver(-left)}
+          </motion.p>
+        )}
+      </AnimatePresence>
 
       {target && (
         <div className="mb-2 flex items-center gap-2 bg-accent px-3 py-1.5 font-mono text-xs text-muted-foreground">
@@ -121,7 +187,7 @@ export function Composer({ meta, state, identity, names, text, onText, replyTo, 
         </div>
       )}
 
-      <div className="flex items-end gap-2">
+      <div className="flex items-center gap-2">
         <textarea
           ref={inputRef}
           value={text}
@@ -141,7 +207,7 @@ export function Composer({ meta, state, identity, names, text, onText, replyTo, 
           aria-label={placeholder}
           // 16px on phones: iOS Safari zooms the page when a smaller field takes focus.
           className={cn(
-            "max-h-40 min-h-[3.5rem] flex-1 resize-none border bg-background px-3 py-2.5 text-base outline-none placeholder:text-muted-foreground/70",
+            "min-h-[3.5rem] flex-1 resize-none border bg-background px-3 py-2.5 text-base outline-none placeholder:text-muted-foreground/70",
             isMention ? "border-bot/50 font-mono focus-visible:border-bot sm:text-[15px]" : cn("border-input", focus),
           )}
         />
@@ -153,28 +219,18 @@ export function Composer({ meta, state, identity, names, text, onText, replyTo, 
           disabled={!canSend}
           title={t.composer.send}
           aria-label={t.composer.send}
-          className="self-end"
+          className="self-center"
         >
           <ArrowUp />
         </Pill>
       </div>
 
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs text-muted-foreground">
-        <span className={cn("min-w-0 flex-1", error ? "text-destructive" : !isMention && myTurn && (seat === "a" ? "text-side-a" : "text-side-b"))}>
-          {error
-            ? t.errors[error]
-            : isMention
-              ? challenges > 0
-                ? t.composer.mentionHint
-                : t.composer.noChallenges
-              : myTurn
-                ? t.room.yourTurn
-                : t.room.turnOf(opponent)}
-        </span>
-        <span className={cn("font-mono tabular-nums", trimmed.length > limit && "text-destructive")}>
-          {trimmed.length}/{limit}
-        </span>
-      </div>
+      {/* Whose turn it is lives in the placeholder; this line only speaks up for an error or a call to Deb. */}
+      {(error || isMention) && (
+        <p className={cn("mt-2 text-xs", error ? "text-destructive" : "text-muted-foreground")}>
+          {error ? t.errors[error] : challenges > 0 ? t.composer.mentionHint : t.composer.noChallenges}
+        </p>
+      )}
 
       <Dialog open={help} onOpenChange={setHelp} title={t.composer.help}>
         <div className="flex flex-col gap-5 p-6 sm:p-8">
@@ -233,9 +289,7 @@ export function Composer({ meta, state, identity, names, text, onText, replyTo, 
                 >
                   <div className="flex items-center justify-between gap-3">
                     <h3 className="font-medium">{current.title}</h3>
-                    <Tag className={current.free ? "text-muted-foreground" : cn("border-current", sideText(seat))}>
-                      {current.free ? t.composer.helpFree : t.composer.helpCharged}
-                    </Tag>
+                    {current.free ? <Tag className="text-muted-foreground">{t.composer.helpFree}</Tag> : <Charge />}
                   </div>
                   <p className="text-sm leading-relaxed text-muted-foreground">{current.body}</p>
                   {current.example ? (
@@ -255,7 +309,7 @@ export function Composer({ meta, state, identity, names, text, onText, replyTo, 
                       <span className="rounded-2xl rounded-tl-sm border border-bot/25 px-3 py-1.5">
                         <Deb mood="good" className="size-4 text-bot" />
                       </span>
-                      <span className="grid size-7 place-items-center rounded-full border border-bot/30 text-bot">
+                      <span className="grid size-7 place-items-center border border-bot/30 text-bot">
                         <Reply className="size-3.5" />
                       </span>
                     </div>

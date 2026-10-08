@@ -1,10 +1,10 @@
 "use client";
 
 import { ArrowRight } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
 import { useState } from "react";
 import { CopyButton } from "@/components/site/copy-button";
 import { Pill } from "@/components/site/pill";
+import { RoomQr } from "@/components/site/room-qr";
 import { useT } from "@/i18n/LocaleProvider";
 import { api, type ClientError } from "@/lib/api";
 import { SEATS, type DebateState, type RoomMeta, type Seat } from "@/lib/debate/types";
@@ -12,6 +12,7 @@ import { lastName, type Identity } from "@/lib/identity";
 import { useOrigin } from "@/lib/use-origin";
 import { cn } from "@/lib/utils";
 import { sideText } from "./message-item";
+import { RoomFacts } from "./room-facts";
 
 interface LobbyProps {
   meta: RoomMeta;
@@ -45,9 +46,7 @@ export function Lobby({ meta, state, identity, onJoined }: LobbyProps) {
       <section className="px-1 text-center">
         <p className="eyebrow text-side-a">{identity ? t.lobby.waitingOpponent : t.lobby.title}</p>
         <h2 className="headline mt-4 text-3xl leading-tight font-medium tracking-tight text-balance sm:text-6xl">{meta.motion}</h2>
-        <p className="mt-4 text-muted-foreground">
-          {t.lobby.format(meta.format.rounds, meta.format.challenges)} · {t.admin.strictness}: {t.strictness[meta.format.strictness].name.toLowerCase()}
-        </p>
+        <RoomFacts meta={meta} className="mt-5" />
       </section>
 
       {!identity && (
@@ -59,7 +58,7 @@ export function Lobby({ meta, state, identity, onJoined }: LobbyProps) {
             placeholder={t.lobby.namePlaceholder}
             maxLength={24}
             autoComplete="nickname"
-            className="mt-2 h-12 w-full rounded-full border border-input bg-popover px-6 text-center text-base outline-none focus-visible:border-side-a"
+            className="mt-2 h-12 w-full border border-input bg-popover px-6 text-center text-base outline-none focus-visible:border-side-a"
           />
         </label>
       )}
@@ -70,8 +69,7 @@ export function Lobby({ meta, state, identity, onJoined }: LobbyProps) {
           const mine = identity?.seat === seat;
           return (
             <section key={seat} className={cn("border border-t-2 border-border bg-card p-4 sm:p-6", seat === "a" ? "border-t-side-a" : "border-t-side-b")}>
-              <p className={cn("eyebrow", sideText(seat))}>{t.meter.side(seat.toUpperCase())}</p>
-              <p className="mt-2 text-2xl font-medium tracking-tight sm:text-3xl">{meta.stances[seat]}</p>
+              <p className={cn("text-2xl font-medium tracking-tight sm:text-3xl", sideText(seat))}>{meta.stances[seat]}</p>
               <div className="mt-6 flex min-h-10 items-center">
                 {occupant ? (
                   <p className="text-lg">
@@ -100,16 +98,15 @@ export function Lobby({ meta, state, identity, onJoined }: LobbyProps) {
 
       {error && <p className="text-center text-sm text-destructive">{t.errors[error]}</p>}
 
-      <section className="panel flex flex-col items-center gap-5 p-4 sm:flex-row sm:items-center sm:gap-6 sm:p-6">
-        <div className="bg-white p-3">{link ? <QRCodeSVG value={link} size={140} marginSize={0} /> : <div className="size-[140px]" />}</div>
-        <div className="min-w-0 flex-1 text-center sm:text-left">
-          <p className="eyebrow text-side-a">{t.lobby.inviteTitle}</p>
-          <p className="mt-2 text-muted-foreground">{t.lobby.inviteHint}</p>
-          <p className="eyebrow mt-5 text-muted-foreground">{t.lobby.code}</p>
-          <p className="font-mono text-4xl tracking-[0.3em] uppercase sm:text-5xl">{meta.id}</p>
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-3 sm:justify-start">
-            <code className="max-w-full truncate font-mono text-xs text-muted-foreground">{link}</code>
+      {/* The invitation: the QR code on the left; the room's code on the right with a button to copy it and one for the link. */}
+      {/* As wide as what it holds, so it carries no empty band on either side. */}
+      <section className="panel mx-auto flex w-fit max-w-full flex-col items-center gap-5 p-4 sm:flex-row sm:gap-8 sm:p-5">
+        <RoomQr link={link} size={196} />
+        <div className="flex flex-col items-center gap-4 sm:items-start">
+          <p className="font-mono text-4xl font-semibold tracking-[0.3em] uppercase sm:text-5xl">{meta.id}</p>
+          <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
             <CopyButton value={link} label={t.lobby.copyLink} />
+            <CopyButton value={meta.id.toUpperCase()} label={t.lobby.copyCode} />
           </div>
         </div>
       </section>

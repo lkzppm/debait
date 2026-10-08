@@ -1,13 +1,14 @@
 "use client";
 
-import { AtSign, ExternalLink, Languages, Minus, Plus, Repeat, Square, Type } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
+import { AtSign, Coins, ExternalLink, Languages, Minus, Plus, Repeat, Square, Type } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { CubesBand } from "@/components/cubes/cubes-canvas";
+import { ActionButton } from "@/components/site/action-button";
 import { CopyButton } from "@/components/site/copy-button";
 import { Deb } from "@/components/site/deb";
 import { Pill } from "@/components/site/pill";
 import { PillSwitch } from "@/components/site/pill-switch";
+import { RoomQr } from "@/components/site/room-qr";
 import { useLocale } from "@/i18n/LocaleProvider";
 import { LOCALES, DICTIONARIES, type Locale } from "@/i18n";
 import { api, type ClientError } from "@/lib/api";
@@ -65,49 +66,6 @@ function Stepper({ value, min, max, step = 1, onChange }: { value: number; min: 
   );
 }
 
-/** A transparent pixel: the QR code clears its middle for it, and Deb is drawn there instead. */
-const BLANK = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-const QR_SIZE = 168;
-
-/**
- * The room's QR code in the side colours, blue fading into red, with Deb in
- * the middle. It always sits on white: phone cameras read dark modules on a
- * light ground far more reliably than the reverse, whatever the theme. The
- * high error-correction level is what lets the middle be cleared for Deb.
- */
-function RoomQr({ link }: { link: string }) {
-  return (
-    <div className="relative bg-white p-3">
-      <svg width="0" height="0" className="absolute" aria-hidden>
-        <defs>
-          <linearGradient id="room-qr-ink" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" style={{ stopColor: "var(--side-a-deep)" }} />
-            <stop offset="1" style={{ stopColor: "var(--side-b-deep)" }} />
-          </linearGradient>
-        </defs>
-      </svg>
-      {link ? (
-        <>
-          <QRCodeSVG
-            value={link}
-            size={QR_SIZE}
-            marginSize={0}
-            level="H"
-            fgColor="url(#room-qr-ink)"
-            bgColor="transparent"
-            imageSettings={{ src: BLANK, width: 40, height: 40, excavate: true }}
-          />
-          <span className="absolute inset-0 grid place-items-center" aria-hidden>
-            <Deb sides className="size-7" />
-          </span>
-        </>
-      ) : (
-        <div style={{ width: QR_SIZE, height: QR_SIZE }} />
-      )}
-    </div>
-  );
-}
-
 /** One fact of the room's format: an icon, the value, and what it is. */
 function Fact({ icon, value, label }: { icon: React.ReactNode; value: React.ReactNode; label: string }) {
   return (
@@ -131,6 +89,8 @@ export function CreateForm({ onCreated }: { onCreated?: () => void }) {
   const { t, locale } = useLocale();
   const origin = useOrigin();
   const [motion, setMotion] = useState("");
+  // The form is ready to send once the motion is written; the rest has defaults.
+  const ready = motion.trim().length > 0;
   // Empty means "use the default in the chosen language".
   const [stanceA, setStanceA] = useState("");
   const [stanceB, setStanceB] = useState("");
@@ -222,13 +182,11 @@ export function CreateForm({ onCreated }: { onCreated?: () => void }) {
               <p className="text-xl font-medium tracking-tight text-balance sm:text-2xl">{room.motion}</p>
               <div className="grid grid-cols-2 gap-2">
                 <div className="border border-t-2 border-border border-t-side-a p-3">
-                  <p className="eyebrow text-side-a">{t.meter.side("A")}</p>
-                  <p className="mt-1 truncate font-medium">{room.stances.a}</p>
+                  <p className="truncate font-medium text-side-a">{room.stances.a}</p>
                   <p className="truncate text-sm text-muted-foreground">{room.names.a ?? t.lobby.open}</p>
                 </div>
                 <div className="border border-t-2 border-border border-t-side-b p-3 text-right">
-                  <p className="eyebrow text-side-b">{t.meter.side("B")}</p>
-                  <p className="mt-1 truncate font-medium">{room.stances.b}</p>
+                  <p className="truncate font-medium text-side-b">{room.stances.b}</p>
                   <p className="truncate text-sm text-muted-foreground">{room.names.b ?? t.lobby.open}</p>
                 </div>
               </div>
@@ -281,6 +239,10 @@ export function CreateForm({ onCreated }: { onCreated?: () => void }) {
       <Field label={t.admin.stanceB}>
         <input value={stanceB} onChange={(event) => setStanceB(event.target.value)} placeholder={defaults.defaultStanceB} maxLength={40} className={cn(FIELD, "border-l-4 border-l-side-b")} />
       </Field>
+      <p className="-mt-2 flex items-center gap-2 text-sm text-muted-foreground sm:col-span-2">
+        <Coins className="size-4 shrink-0 text-side-a" />
+        {t.admin.coinHint}
+      </p>
       <Field label={t.admin.botLanguage} className="sm:col-span-2">
         <PillSwitch
           label={t.admin.botLanguage}
@@ -306,11 +268,11 @@ export function CreateForm({ onCreated }: { onCreated?: () => void }) {
         </div>
         <p className="mt-2 text-sm text-muted-foreground">{t.strictness[strictness].hint}</p>
       </div>
-      <div className="flex items-center gap-3 sm:col-span-2">
-        <Pill type="submit" size="lg" disabled={busy || !motion.trim()}>
-          <Plus />
+      {/* The one big action, glowing once the motion is written. */}
+      <div className="flex flex-col items-center gap-3 pt-4 sm:col-span-2">
+        <ActionButton ready={ready} busy={busy}>
           {t.admin.create}
-        </Pill>
+        </ActionButton>
         {error && <p className="text-sm text-destructive">{t.errors[error]}</p>}
       </div>
     </form>

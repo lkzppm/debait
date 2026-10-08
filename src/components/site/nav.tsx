@@ -13,7 +13,7 @@ import { LocaleSwitch } from "./locale-switch";
 import { Logo } from "./logo";
 import { ThemeSwitch } from "./theme-switch";
 
-const ICON = "grid size-9 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground";
+const ICON = "grid size-9 shrink-0 place-items-center text-muted-foreground transition-colors hover:bg-accent hover:text-foreground";
 
 /**
  * The top bar, shared by the pages outside a room: the wordmark as the home
