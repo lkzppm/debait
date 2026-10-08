@@ -84,22 +84,39 @@ export function Charge() {
   );
 }
 
-/** The pages Deb read, numbered, as links. */
+/** The site a source is on, without "www.". */
+function host(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
+
+/**
+ * The pages Deb read, numbered, as links with the site they are on. A row
+ * lights up under the pointer, the arrow lifts, and the full title and
+ * address show as a tooltip (titles are cut to one line).
+ */
 export function SourceList({ sources }: { sources: readonly Source[] }) {
   if (sources.length === 0) return null;
   return (
-    <ul className="flex flex-col gap-1">
+    <ul className="-mx-1.5 flex flex-col">
       {sources.map((source, index) => (
-        <li key={source.url} className="flex items-baseline gap-2 font-mono text-xs">
-          <span className="text-muted-foreground">[{index + 1}]</span>
+        <li key={source.url}>
           <a
             href={source.url}
             target="_blank"
             rel="noreferrer noopener"
-            className="inline-flex min-w-0 items-center gap-1 text-side-a underline decoration-side-a/40 underline-offset-4 hover:decoration-side-a"
+            title={`${source.title}\n${source.url}`}
+            className="group/source flex min-w-0 items-baseline gap-2 px-1.5 py-1 font-mono text-xs transition-colors hover:bg-side-a/10"
           >
-            <span className="truncate">{source.title}</span>
-            <ArrowUpRight className="size-3.5 shrink-0" />
+            <span className="text-muted-foreground">[{index + 1}]</span>
+            <span className="min-w-0 truncate text-side-a underline decoration-side-a/40 underline-offset-4 group-hover/source:decoration-side-a">
+              {source.title}
+            </span>
+            <span className="shrink-0 text-muted-foreground transition-colors group-hover/source:text-foreground">{host(source.url)}</span>
+            <ArrowUpRight className="size-3.5 shrink-0 self-center text-side-a transition-transform group-hover/source:translate-x-0.5 group-hover/source:-translate-y-0.5" />
           </a>
         </li>
       ))}
@@ -164,7 +181,7 @@ export function MessageItem({ message, name, canAct, onAsk, onRetry }: MessageIt
         <Debater className={cn("mt-1.5 size-6 shrink-0", sideText(message.seat))} title={name} />
         <div
           className={cn(
-            "w-fit max-w-full rounded-2xl border",
+            "w-fit max-w-full min-w-0 rounded-2xl border",
             message.seat === "a" ? "rounded-tl-sm border-side-a/30 bg-side-a/12" : "rounded-tr-sm border-side-b/30 bg-side-b/12",
           )}
         >
@@ -198,6 +215,18 @@ export function MessageItem({ message, name, canAct, onAsk, onRetry }: MessageIt
             )}
           </p>
         </div>
+        {/* Any message not yet checked: the reply arrow, centred on the message, starts a call to Deb about it. */}
+        {judgement && score && canAct && !validation && (
+          <button
+            type="button"
+            onClick={() => onAsk(message.id)}
+            aria-label={t.feed.askBot}
+            title={t.feed.askBot}
+            className="grid size-8 shrink-0 place-items-center self-center border border-bot/30 text-bot transition-[background-color,scale] hover:scale-110 hover:bg-bot/10"
+          >
+            <Reply className={cn("size-4", right && "-scale-x-100")} />
+          </button>
+        )}
       </div>
 
       {/* Deb answers under the message, in a bubble of her own, from the same side so it reads as a reply to it. */}
@@ -361,18 +390,6 @@ export function MessageItem({ message, name, canAct, onAsk, onRetry }: MessageIt
             )}
           </div>
 
-          {/* Any message not yet checked: the reply arrow beside her bubble starts a call to her about it. */}
-          {judgement && score && canAct && !validation && (
-            <button
-              type="button"
-              onClick={() => onAsk(message.id)}
-              aria-label={t.feed.askBot}
-              title={t.feed.askBot}
-              className="grid size-8 shrink-0 place-items-center border border-bot/30 text-bot transition-[background-color,scale] hover:scale-110 hover:bg-bot/10"
-            >
-              <Reply className={cn("size-4", right && "-scale-x-100")} />
-            </button>
-          )}
         </div>
       </div>
     </motion.article>

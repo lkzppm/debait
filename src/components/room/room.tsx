@@ -2,6 +2,7 @@
 
 import { ArrowLeft, Info, Receipt, Trophy } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence } from "motion/react";
 import Link from "next/link";
 import { LEVEL_FACE } from "@/components/admin/level-picker";
 import { CubesField } from "@/components/cubes/cubes-canvas";
@@ -28,6 +29,7 @@ import { Meter } from "./meter";
 import { Result } from "./result";
 import { RoomFacts } from "./room-facts";
 import { ScorePanel } from "./score-panel";
+import { TypingBubble } from "./typing-bubble";
 
 const CONNECTION_TONE: Record<Connection, string> = {
   connecting: "bg-muted-foreground",
@@ -43,7 +45,7 @@ const CONNECTION_TONE: Record<Connection, string> = {
  */
 export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
   const t = useT();
-  const { events, ready, connection } = useRoomEvents(meta.id);
+  const { events, ready, connection, typing } = useRoomEvents(meta.id);
   const state = useMemo(() => reduce(meta, events), [meta, events]);
   const [identity, setIdentity] = useIdentity(meta.id);
   const [text, setText] = useState("");
@@ -72,7 +74,9 @@ export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
   );
 
   // Follow the debate down the page unless the reader scrolled up to look at something.
-  const activity = state.timeline.length + state.ledger.length + state.asks.filter((ask) => ask.reply).length;
+  // Others typing (never your own seat), only while the debate is live.
+  const typers = live ? typing.filter((seat) => seat !== identity?.seat) : [];
+  const activity = state.timeline.length + state.ledger.length + state.asks.filter((ask) => ask.reply).length + typers.length;
   useEffect(() => {
     const feed = feedRef.current;
     if (!feed) return;
@@ -236,6 +240,11 @@ export function Room({ meta, engine }: { meta: RoomMeta; engine: EngineKind }) {
                       />
                     ),
                   )}
+                  <AnimatePresence>
+                    {typers.map((seat) => (
+                      <TypingBubble key={seat} seat={seat} name={names[seat]} />
+                    ))}
+                  </AnimatePresence>
               </div>
 
               {finished ? (

@@ -167,6 +167,7 @@ export const en = {
   },
 
   feed: {
+    typing: (name: string) => `${name} is typing`,
     coinTitle: "Who starts?",
     coinFlipping: "Deb is flipping a coin…",
     coinOpens: "opens the debate",
