@@ -229,47 +229,59 @@ export function CreateForm({ onCreated }: { onCreated?: () => void }) {
   }
 
   return (
-    <form onSubmit={submit} className="grid w-full max-w-2xl gap-5 sm:grid-cols-2">
-      <Field label={t.admin.motion} className="sm:col-span-2">
-        <input value={motion} onChange={(event) => setMotion(event.target.value)} placeholder={defaults.motionPlaceholder} maxLength={160} required className={cn(FIELD, "h-12 text-lg")} />
-      </Field>
-      <Field label={t.admin.stanceA}>
-        <input value={stanceA} onChange={(event) => setStanceA(event.target.value)} placeholder={defaults.defaultStanceA} maxLength={40} className={cn(FIELD, "border-l-4 border-l-side-a")} />
-      </Field>
-      <Field label={t.admin.stanceB}>
-        <input value={stanceB} onChange={(event) => setStanceB(event.target.value)} placeholder={defaults.defaultStanceB} maxLength={40} className={cn(FIELD, "border-l-4 border-l-side-b")} />
-      </Field>
-      <p className="-mt-2 flex items-center gap-2 text-sm text-muted-foreground sm:col-span-2">
-        <Coins className="size-4 shrink-0 text-side-a" />
-        {t.admin.coinHint}
-      </p>
-      <Field label={t.admin.botLanguage} className="sm:col-span-2">
-        <PillSwitch
-          label={t.admin.botLanguage}
-          size="md"
-          value={roomLocale}
-          onChange={setBotLocale}
-          options={LOCALES.map((option) => ({ value: option, label: DICTIONARIES[option].name }))}
-        />
-      </Field>
-      <Field label={t.admin.rounds}>
-        <Stepper value={rounds} min={1} max={6} onChange={setRounds} />
-      </Field>
-      <Field label={t.admin.challenges}>
-        <Stepper value={challenges} min={0} max={5} onChange={setChallenges} />
-      </Field>
-      <Field label={t.admin.charLimit} className="sm:col-span-2">
-        <Stepper value={charLimit} min={200} max={1200} step={100} onChange={setCharLimit} />
-      </Field>
-      <div className="block text-sm sm:col-span-2">
-        <span className="eyebrow text-muted-foreground">{t.admin.strictness}</span>
-        <div className="mt-1.5">
-          <LevelPicker value={strictness} onChange={setStrictness} />
+    // Two columns from lg (what the debate is about | how it runs), the button under both:
+    // the whole form fits on a laptop screen without scrolling.
+    <form onSubmit={submit} className="grid w-full max-w-5xl gap-x-12 gap-y-5 lg:grid-cols-2">
+      <div className="flex min-w-0 flex-col gap-4">
+        <Field label={t.admin.motion}>
+          <input value={motion} onChange={(event) => setMotion(event.target.value)} placeholder={defaults.motionPlaceholder} maxLength={160} required className={cn(FIELD, "h-12 text-lg")} />
+        </Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label={t.admin.stanceA}>
+            <input value={stanceA} onChange={(event) => setStanceA(event.target.value)} placeholder={defaults.defaultStanceA} maxLength={40} className={cn(FIELD, "border-l-4 border-l-side-a")} />
+          </Field>
+          <Field label={t.admin.stanceB}>
+            <input value={stanceB} onChange={(event) => setStanceB(event.target.value)} placeholder={defaults.defaultStanceB} maxLength={40} className={cn(FIELD, "border-l-4 border-l-side-b")} />
+          </Field>
         </div>
-        <p className="mt-2 text-sm text-muted-foreground">{t.strictness[strictness].hint}</p>
+        <p className="-mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+          <Coins className="size-4 shrink-0 text-side-a" />
+          {t.admin.coinHint}
+        </p>
+        <Field label={t.admin.botLanguage}>
+          <PillSwitch
+            label={t.admin.botLanguage}
+            size="md"
+            value={roomLocale}
+            onChange={setBotLocale}
+            options={LOCALES.map((option) => ({ value: option, label: DICTIONARIES[option].name }))}
+          />
+        </Field>
       </div>
+
+      <div className="flex min-w-0 flex-col gap-4">
+        <div className="grid grid-cols-2 gap-4">
+          <Field label={t.admin.rounds}>
+            <Stepper value={rounds} min={1} max={6} onChange={setRounds} />
+          </Field>
+          <Field label={t.admin.challenges}>
+            <Stepper value={challenges} min={0} max={5} onChange={setChallenges} />
+          </Field>
+        </div>
+        <Field label={t.admin.charLimit}>
+          <Stepper value={charLimit} min={200} max={1200} step={100} onChange={setCharLimit} />
+        </Field>
+        <div className="block text-sm">
+          <span className="eyebrow text-muted-foreground">{t.admin.strictness}</span>
+          <div className="mt-1.5">
+            <LevelPicker value={strictness} onChange={setStrictness} />
+          </div>
+          <p className="mt-2 text-sm text-muted-foreground">{t.strictness[strictness].hint}</p>
+        </div>
+      </div>
+
       {/* The one big action, glowing once the motion is written. */}
-      <div className="flex flex-col items-center gap-3 pt-4 sm:col-span-2">
+      <div className="flex flex-col items-center gap-3 pt-2 lg:col-span-2">
         <ActionButton ready={ready} busy={busy}>
           {t.admin.create}
         </ActionButton>
