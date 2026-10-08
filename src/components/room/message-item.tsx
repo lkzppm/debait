@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronDown, Reply, RotateCw, TriangleAlert } from "lucide-react";
+import { ArrowUpRight, AtSign, Check, ChevronDown, Reply, RotateCw, SearchCheck, TriangleAlert } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { Deb, verdictMood } from "@/components/site/deb";
@@ -9,7 +9,7 @@ import { Tag } from "@/components/site/pill";
 import { useT } from "@/i18n/LocaleProvider";
 import { BRAND } from "@/lib/brand";
 import { findQuote } from "@/lib/debate/quote";
-import { QUALITY_KEYS, type MessageView, type Seat, type ValidationStatus } from "@/lib/debate/types";
+import { QUALITY_KEYS, type MessageView, type Seat, type Source, type ValidationStatus } from "@/lib/debate/types";
 import { cn } from "@/lib/utils";
 
 interface Mark {
@@ -73,6 +73,40 @@ function Unfold({ className, children }: { className?: string; children: React.R
   );
 }
 
+/** A used @deb call, shown as "−1 @". */
+export function Charge() {
+  const t = useT();
+  return (
+    <span title={t.bot.charged} aria-label={t.bot.charged} className="inline-flex items-center gap-0.5 font-mono text-xs font-semibold text-muted-foreground">
+      {signed(-1)}
+      <AtSign className="size-3.5" />
+    </span>
+  );
+}
+
+/** The pages Deb read, numbered, as links. */
+export function SourceList({ sources }: { sources: readonly Source[] }) {
+  if (sources.length === 0) return null;
+  return (
+    <ul className="flex flex-col gap-1">
+      {sources.map((source, index) => (
+        <li key={source.url} className="flex items-baseline gap-2 font-mono text-xs">
+          <span className="text-muted-foreground">[{index + 1}]</span>
+          <a
+            href={source.url}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="inline-flex min-w-0 items-center gap-1 text-side-a underline decoration-side-a/40 underline-offset-4 hover:decoration-side-a"
+          >
+            <span className="truncate">{source.title}</span>
+            <ArrowUpRight className="size-3.5 shrink-0" />
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 // Flags sit slightly crooked, like notes slapped on the message.
 const TILTS = ["-rotate-1", "rotate-1", "-rotate-[0.5deg]", "rotate-[1.5deg]"];
 
@@ -110,7 +144,6 @@ export function MessageItem({ message, name, canAct, onAsk, onRetry }: MessageIt
 
   const toggle = (index: number) => setOpenPenalty((current) => (current === index ? null : index));
   const opened = openPenalty !== null && judgement && score ? score.penalties[openPenalty] : null;
-  const checkable = judgement?.claims.find((claim) => claim.checkworthy && claim.kind === "fact");
 
   return (
     <motion.article
@@ -118,6 +151,7 @@ export function MessageItem({ message, name, canAct, onAsk, onRetry }: MessageIt
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
+      data-message={message.id}
       className={cn("flex w-full flex-col gap-1.5", right ? "items-end" : "items-start")}
     >
       {/* The name sits over the bubble, past the avatar's column. */}
@@ -230,20 +264,13 @@ export function MessageItem({ message, name, canAct, onAsk, onRetry }: MessageIt
                     </button>
                   ))}
 
-                  {validation && (
-                    <StatusTag status={validation.status}>
-                      {t.status[validation.status]}
-                      {validation.delta !== 0 && <span className="font-mono">{signed(validation.delta)}</span>}
-                    </StatusTag>
-                  )}
-
                   <button
                     type="button"
                     onClick={() => setShowRubric((shown) => !shown)}
                     aria-expanded={showRubric}
                     aria-label={t.feed.rubric}
                     title={t.feed.rubric}
-                    className="grid size-7 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+                    className="grid size-7 place-items-center text-muted-foreground hover:bg-accent hover:text-foreground"
                   >
                     <ChevronDown className={cn("size-3.5 transition-transform", showRubric && "rotate-180")} />
                   </button>
@@ -257,6 +284,28 @@ export function MessageItem({ message, name, canAct, onAsk, onRetry }: MessageIt
                 )}
 
                 {judgement.note && <p className="px-3.5 pb-2.5 text-left text-[15px] leading-relaxed">{judgement.note}</p>}
+
+                {/* Deb's check of a claim in this message: the verdict, what she found, her sources, the points. */}
+                <AnimatePresence initial={false}>
+                  {validation && (
+                    <Unfold className="flex flex-col gap-2.5 border-t border-bot/20 px-3.5 py-3 text-left">
+                      <p className="flex flex-wrap items-center gap-2">
+                        <span className="eyebrow inline-flex items-center gap-1.5 text-muted-foreground">
+                          <SearchCheck className="size-3.5" />
+                          {t.bot.intent.validate}
+                        </span>
+                        <StatusTag status={validation.status}>{t.status[validation.status]}</StatusTag>
+                        {validation.delta !== 0 && (
+                          <span className={cn("font-mono text-sm font-semibold", validation.delta < 0 ? "text-destructive" : sideText(message.seat))}>
+                            {t.bot.effect(signed(validation.delta), name)}
+                          </span>
+                        )}
+                      </p>
+                      {validation.text && <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{validation.text}</p>}
+                      <SourceList sources={validation.sources} />
+                    </Unfold>
+                  )}
+                </AnimatePresence>
 
                 {/* Switching from one flag to another folds the first away and unfolds the next. */}
                 <AnimatePresence initial={false} mode="wait">
@@ -312,14 +361,14 @@ export function MessageItem({ message, name, canAct, onAsk, onRetry }: MessageIt
             )}
           </div>
 
-          {/* A claim Deb can check: the reply arrow beside her bubble starts a call to her about this message. */}
-          {judgement && score && canAct && !validation && checkable && (
+          {/* Any message not yet checked: the reply arrow beside her bubble starts a call to her about it. */}
+          {judgement && score && canAct && !validation && (
             <button
               type="button"
               onClick={() => onAsk(message.id)}
               aria-label={t.feed.askBot}
               title={t.feed.askBot}
-              className="grid size-8 shrink-0 place-items-center rounded-full border border-bot/30 text-bot transition-[background-color,scale] hover:scale-110 hover:bg-bot/10"
+              className="grid size-8 shrink-0 place-items-center border border-bot/30 text-bot transition-[background-color,scale] hover:scale-110 hover:bg-bot/10"
             >
               <Reply className={cn("size-4", right && "-scale-x-100")} />
             </button>

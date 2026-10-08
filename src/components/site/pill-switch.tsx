@@ -20,7 +20,7 @@ interface PillSwitchProps<T extends string> {
   className?: string;
 }
 
-/** A row of choices in a pill; a purple thumb slides to the chosen one. */
+/** A row of choices in a pill; a thumb slides to the chosen one, blue on the first, red on the second, like the two sides. */
 export function PillSwitch<T extends string>({ options, value, onChange, label, size = "sm", className }: PillSwitchProps<T>) {
   // One thumb per switch, so two on a page never trade places.
   const layoutId = useId();
@@ -30,7 +30,7 @@ export function PillSwitch<T extends string>({ options, value, onChange, label, 
       aria-label={label}
       className={cn("relative flex w-fit items-center rounded-full border border-border p-0.5 font-medium", size === "sm" ? "text-xs" : "text-sm", className)}
     >
-      {options.map((option) => {
+      {options.map((option, index) => {
         const active = option.value === value;
         return (
           <button
@@ -47,7 +47,11 @@ export function PillSwitch<T extends string>({ options, value, onChange, label, 
             )}
           >
             {active && (
-              <motion.span layoutId={layoutId} className="absolute inset-0 -z-10 rounded-full bg-side-a" transition={{ type: "spring", stiffness: 500, damping: 36 }} />
+              <motion.span
+                layoutId={layoutId}
+                className={cn("absolute inset-0 -z-10 rounded-full", index % 2 === 0 ? "bg-side-a" : "bg-side-b")}
+                transition={{ type: "spring", stiffness: 500, damping: 36 }}
+              />
             )}
             {option.label}
           </button>

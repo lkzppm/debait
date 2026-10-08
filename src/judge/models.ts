@@ -69,17 +69,30 @@ function parseTrace(body: unknown, trace: SearchTrace) {
   }
 }
 
+/** Sets `tool_choice: "required"` on an outgoing chat request body. */
+function requireTool(init: RequestInit | undefined): RequestInit | undefined {
+  if (typeof init?.body !== "string") return init;
+  try {
+    return { ...init, body: JSON.stringify({ ...JSON.parse(init.body), tool_choice: "required" }) };
+  } catch {
+    return init;
+  }
+}
+
 /**
  * A mention model whose single response is also read raw, so the search
  * trace is available next to the SDK's result. Use it for one call only.
+ * With `forceSearch` the request asks Groq to use the search tool: set here,
+ * on the wire, because the SDK would reject a "required" answer whose tool
+ * call Groq ran on its side and never returned.
  */
-export function mentionModelWithTrace() {
+export function mentionModelWithTrace({ forceSearch = false } = {}) {
   const trace: SearchTrace = { results: [], opened: [] };
   let pending: Promise<void> = Promise.resolve();
   const provider = createGroq({
     apiKey: process.env.GROQ_API_KEY,
     fetch: async (input, init) => {
-      const response = await fetch(input, init);
+      const response = await fetch(input, forceSearch ? requireTool(init) : init);
       if (response.ok) {
         pending = response
           .clone()

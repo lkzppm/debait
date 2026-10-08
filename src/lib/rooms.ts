@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomInt } from "node:crypto";
 import { customAlphabet, nanoid } from "nanoid";
 import { isLocale, type Locale } from "@/i18n/locales";
 import { reduce } from "./debate/reducer";
@@ -165,7 +165,8 @@ export async function joinRoom(rawId: string, seat: Seat, rawName: string): Prom
 
   const seats = await store.hashAll<SeatRecord>(seatsKey(room.id));
   if (seats.a && seats.b && (await store.setIfAbsent(`room:${room.id}:start`, "1", ROOM_TTL))) {
-    await appendEvent(room.id, { type: "room.started" });
+    // Deb flips a coin for who opens; the log keeps the result, so every screen shows the same one.
+    await appendEvent(room.id, { type: "room.started", opener: randomInt(2) === 0 ? "a" : "b" });
     await setStatus(room, "live");
   }
   return { seat, token };

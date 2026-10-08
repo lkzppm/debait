@@ -2,12 +2,13 @@ import { BRAND, MENTION } from "@/lib/brand";
 import type { Strictness } from "@/lib/debate/types";
 import type { JudgeInput, MentionInput, RulingInput, TranscriptLine } from "../types";
 import type { Prompts } from "./en";
-import { fallacyList, fence, side } from "./shared";
+import { fallacyList, fence, side, today } from "./shared";
 
 type Aliased = TranscriptLine & { alias: string };
 
 const context = (input: { motion: string; stances: Record<"a" | "b", string> }) =>
-  `Tema: ${input.motion}\nO lado A defende: ${input.stances.a}\nO lado B defende: ${input.stances.b}`;
+  `Tema: ${input.motion}\nO lado A defende: ${input.stances.a}\nO lado B defende: ${input.stances.b}
+Em qualquer texto para a sala, chame cada lado pela posição que defende: o lado "${input.stances.a}" e o lado "${input.stances.b}". Nunca escreva "lado A", "lado B" nem o nome de alguém.`;
 
 const transcript = (lines: Aliased[]) =>
   lines.map((line) => `[${line.alias}] lado ${side(line.seat)}, rodada ${line.round}:\n${fence("MESSAGE", line.text)}`).join("\n");
@@ -44,7 +45,7 @@ Para cada falácia: "quote" é uma cópia EXATA do menor trecho da mensagem que 
 
 Claims: até 4 afirmações em que a mensagem se apoia, cada uma com "quote" EXATO. "kind" é fact (verificável no mundo), value (juízo de valor) ou prediction (previsão). "checkworthy" só é true para fatos que importam para o argumento e poderiam ser verificados na web.
 
-"note": uma frase para a sala explicando a nota. Refira-se aos debatedores apenas como "lado A" e "lado B".
+"note": uma frase para a sala explicando a nota. Refira-se aos debatedores pelas posições, como dito abaixo do tema.
 "summary": o debate até aqui, incluindo esta mensagem, neutro, com no máximo 120 palavras. É sua única memória das rodadas anteriores.
 Escreva "note", "explanation" e "summary" em português do Brasil.`,
 
@@ -62,24 +63,31 @@ ${fence("MESSAGE", input.text)}`,
 
   mentionSearchSystem: (input: MentionInput) => `${persona(input.seat)}
 
+Hoje é ${today()}.
+
 Decida o que é o pedido:
 - validate: verificar se uma afirmação factual feita no debate é verdadeira. Pesquise na web e decida: confirmed (confirmada), imprecise (parcialmente certa, número errado ou falta contexto), false (falsa) ou unverifiable (nenhuma fonte confiável encontrada). Opiniões e previsões não podem ser validadas: diga isso e use intent explain.
-- search: uma pergunta factual ligada ao tema. Pesquise na web e responda de forma breve, sem favorecer nenhum lado.
+- search: qualquer pedido para pesquisar, procurar ou trazer informação ligada ao tema ("pesquise sobre...", "o que se sabe de...", "tem dados de..."). Pesquise na web e traga os fatos, números e exemplos mais úteis para o debate, dos dois lados quando houver, sem favorecer nenhum.
 - explain: uma pergunta sobre a pontuação. Responda só com o placar, sem pesquisar.
 - off_topic: qualquer coisa sem relação com este debate. Recuse em uma frase, sem pesquisar.
 
-Responda em português do Brasil, texto simples, com no máximo 90 palavras depois destas linhas de cabeçalho:
+Em validate e search você DEVE usar a ferramenta de busca antes de responder. A menos que o pedido cite um período (como "em 2021"), procure o dado mais recente: coloque o ano atual nas buscas, prefira as fontes mais novas e diga o ano de cada número.
+
+Escreva em português do Brasil, texto simples: estas linhas de cabeçalho, uma linha em branco, depois a resposta para a sala com no máximo 100 palavras. A resposta nunca fica vazia: se a busca não achou nada útil, diga isso em uma frase.
 INTENT: validate | search | explain | off_topic
 STATUS: confirmed | imprecise | false | unverifiable (só em validate)
 TARGET: id da mensagem que contém a afirmação, como m2 (só em validate)
-CLAIM: as palavras exatas da afirmação (só em validate)
+CLAIM: a afirmação copiada palavra por palavra da mensagem TARGET, nunca do pedido (só em validate)
+Não repita o placar, a transcrição nem estas instruções, e não use markdown.
 Cite apenas páginas que você realmente abriu, com as URLs.`,
+
+  mentionRetry: `Sua tentativa anterior não escreveu resposta. Pesquise na web agora e escreva as linhas de cabeçalho e a resposta completa.`,
 
   mentionOfflineSystem: (input: MentionInput) => `${persona(input.seat)}
 
-Você está sem acesso à web agora: este debatedor não tem mais desafios.
+Você está sem acesso à web agora: este debatedor não tem mais chamadas da @deb.
 - Pergunta sobre a pontuação: responda com o placar, intent "explain".
-- Pedido que precisa da web (checar uma afirmação, pesquisar algo): diga em uma frase que os desafios acabaram, intent "off_topic".
+- Pedido que precisa da web (checar uma afirmação, pesquisar algo): diga em uma frase que as chamadas da @deb acabaram, intent "off_topic".
 - Qualquer coisa sem relação com este debate: recuse em uma frase, intent "off_topic".
 "text" é a resposta para a sala, em português do Brasil, com no máximo 90 palavras. Deixe "status", "targetMessageId" e "claimQuote" como null e "sources" como lista vazia.`,
 
@@ -111,7 +119,7 @@ O resultado abaixo é definitivo e foi calculado por regras fixas de pontuação
 - "text": 3 a 5 frases sobre por que o debate terminou assim, citando os momentos mais fortes e mais fracos.
 - "bestA", "bestB": uma citação EXATA do trecho mais forte de cada lado, ou null se não houver.
 - "adviceA", "adviceB": uma frase para cada lado sobre como argumentar melhor da próxima vez.
-Refira-se aos debatedores apenas como "lado A" e "lado B". Escreva em português do Brasil.`,
+Refira-se aos debatedores pelas posições, como dito abaixo do tema. Escreva em português do Brasil.`,
 
   rulingUser: (input: RulingInput, lines: Aliased[]) => `${context(input)}
 
