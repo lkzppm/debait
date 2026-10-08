@@ -182,6 +182,34 @@ export async function seatOf(id: string, token: string): Promise<Seat | null> {
   return null;
 }
 
+// ---- Typing -------------------------------------------------------------------
+// Who is typing is presence, not debate state: it lives outside the event log,
+// in a key per seat that expires by itself a few seconds after the last keystroke.
+
+const typingKey = (id: string, seat: Seat) => `room:${id}:typing:${seat}`;
+/** How long a typing mark lasts after the last ping from the browser. */
+export const TYPING_TTL = 4;
+
+/** A debater is writing: marks their seat for a few seconds. Unknown tokens are ignored. */
+export async function markTyping(rawId: string, token: string): Promise<void> {
+  const id = normalizeRoomId(rawId);
+  if (!id) throw new ApiError("not_found");
+  const seat = await seatOf(id, token);
+  if (!seat) throw new ApiError("forbidden");
+  await kv().set(typingKey(id, seat), 1, TYPING_TTL);
+}
+
+/** The message went out: the seat is no longer typing. */
+export async function clearTyping(id: string, seat: Seat): Promise<void> {
+  await kv().del(typingKey(id, seat));
+}
+
+/** The seats typing right now. */
+export async function getTyping(id: string): Promise<Seat[]> {
+  const [a, b] = await Promise.all([kv().exists(typingKey(id, "a")), kv().exists(typingKey(id, "b"))]);
+  return [...(a ? (["a"] as const) : []), ...(b ? (["b"] as const) : [])];
+}
+
 // ---- Ending and removing ----------------------------------------------------
 
 export async function finishRoom(room: RoomRecord, reason: "completed" | "stopped"): Promise<boolean> {

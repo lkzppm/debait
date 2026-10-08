@@ -3,7 +3,7 @@ import { getEngine, JudgeError } from "@/judge";
 import type { TranscriptLine } from "@/judge/types";
 import { mentionsBot } from "@/lib/brand";
 import { ApiError } from "@/lib/http";
-import { appendEvent, finishRoom, loadRoom, requireRoom, ROOM_TTL, seatOf, toMeta } from "@/lib/rooms";
+import { appendEvent, clearTyping, finishRoom, loadRoom, requireRoom, ROOM_TTL, seatOf, toMeta } from "@/lib/rooms";
 import { kv } from "@/lib/store";
 import { FREE_ASKS, MENTION_LIMIT, STALE_MS } from "./limits";
 import { describeScoreboard, isComplete } from "./reducer";
@@ -50,6 +50,7 @@ export async function postMessage(rawId: string, token: string, rawText: string)
   }
   const id = nanoid(10);
   await appendEvent(room.id, { type: "debate.message", id, seat, text });
+  await clearTyping(room.id, seat);
   return { id };
 }
 

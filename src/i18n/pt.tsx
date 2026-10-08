@@ -163,6 +163,7 @@ export const pt: Dictionary = {
   },
 
   feed: {
+    typing: (name) => `${name} está escrevendo`,
     coinTitle: "Quem começa?",
     coinFlipping: "A Deb está tirando cara ou coroa…",
     coinOpens: "abre o debate",
