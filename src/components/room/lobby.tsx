@@ -1,8 +1,9 @@
 "use client";
 
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Share2 } from "lucide-react";
 import { useState } from "react";
 import { CopyButton } from "@/components/site/copy-button";
+import { Dialog } from "@/components/site/dialog";
 import { Pill } from "@/components/site/pill";
 import { RoomQr } from "@/components/site/room-qr";
 import { useT } from "@/i18n/LocaleProvider";
@@ -28,6 +29,7 @@ export function Lobby({ meta, state, identity, onJoined }: LobbyProps) {
   const [name, setName] = useState(lastName);
   const [joining, setJoining] = useState<Seat | null>(null);
   const [error, setError] = useState<ClientError | null>(null);
+  const [sharing, setSharing] = useState(false);
   const link = origin ? `${origin}/r/${meta.id}` : "";
 
   const join = async (seat: Seat) => {
@@ -42,7 +44,8 @@ export function Lobby({ meta, state, identity, onJoined }: LobbyProps) {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 py-4">
+    // Centred in the room's height; with the invitation in a popup everything fits on one screen.
+    <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col justify-center gap-4 py-4">
       <section className="px-1 text-center">
         <p className="eyebrow text-side-a">{identity ? t.lobby.waitingOpponent : t.lobby.title}</p>
         <h2 className="headline mt-4 text-3xl leading-tight font-medium tracking-tight text-balance sm:text-6xl">{meta.motion}</h2>
@@ -98,18 +101,24 @@ export function Lobby({ meta, state, identity, onJoined }: LobbyProps) {
 
       {error && <p className="text-center text-sm text-destructive">{t.errors[error]}</p>}
 
-      {/* The invitation: the QR code on the left; the room's code on the right with a button to copy it and one for the link. */}
-      {/* As wide as what it holds, so it carries no empty band on either side. */}
-      <section className="panel mx-auto flex w-fit max-w-full flex-col items-center gap-5 p-4 sm:flex-row sm:gap-8 sm:p-5">
-        <RoomQr link={link} size={196} />
-        <div className="flex flex-col items-center gap-4 sm:items-start">
+      {/* The invitation is a popup, so the lobby fits on one screen and the QR code can be big. */}
+      <div className="flex justify-center">
+        <Pill type="button" variant="outline" onClick={() => setSharing(true)} aria-haspopup="dialog">
+          <Share2 />
+          {t.lobby.share}
+        </Pill>
+      </div>
+
+      <Dialog open={sharing} onOpenChange={setSharing} title={t.lobby.share} className="max-w-md">
+        <div className="flex flex-col items-center gap-5 p-6 sm:p-8">
+          <RoomQr link={link} size={260} />
           <p className="font-mono text-4xl font-semibold tracking-[0.3em] uppercase sm:text-5xl">{meta.id}</p>
-          <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
+          <div className="flex flex-wrap justify-center gap-2">
             <CopyButton value={link} label={t.lobby.copyLink} />
             <CopyButton value={meta.id.toUpperCase()} label={t.lobby.copyCode} />
           </div>
         </div>
-      </section>
+      </Dialog>
     </div>
   );
 }
