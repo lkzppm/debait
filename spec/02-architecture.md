@@ -102,7 +102,8 @@ POST mention {token, text, replyTo?} ─▶ postMention: seat, not busy, calls l
 - The browser hook (`src/lib/use-room-events.ts`) uses `EventSource`. When the stream ends or the network drops, the browser reconnects and sends `Last-Event-ID`; the route resumes from the next event. History and live updates take the same path, so there is no snapshot endpoint and no gap to handle.
 - The hook accepts an event only when its `seq` is exactly the next one, so repeats are harmless.
 - A deleted room sends a `gone` event (or a 404 on connect) and the page says so.
-- Cost on Upstash: about two commands per second per open tab. Fine for a class; watch the free quota if many spectators connect (limits not checked).
+- **Typing** (2026-10-08) is presence, kept out of the log on purpose: `POST /api/rooms/[id]/typing` (the debater's token) sets `room:<id>:typing:<seat>` for 4 s; the composer pings at most every 2.5 s while its text is not empty, and a posted message deletes the key. The stream reads both keys about once a second and sends an `event: typing` frame with the typing seats only when the set changes; the room shows the other debater's three-dot bubble. Two more Upstash commands per read.
+- Cost on Upstash: about two commands per second per open tab (plus the typing reads, about two more a second). Fine for a class; watch the free quota if many spectators connect (limits not checked).
 
 ## The admin pages
 
