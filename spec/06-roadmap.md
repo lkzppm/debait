@@ -69,6 +69,10 @@ Evening pass (2026-10-06, local, not yet committed): Deb's feedback and the `@de
 
 Chat pass (2026-10-07): the ledger and Deb's help as floating buttons over the feed, Deb's level as her face in the top bar, the reply arrow for a check, the help popup as a list of Deb's tools, unfolding panels in Deb's bubble, the feed faded at its edges, the hand cursor everywhere (`04-ui-design.md`).
 
+Friday fixes (2026-10-07, after a call with the team): `@deb` searches that came back empty (the 20b skipped the search; now required on a retry), the most recent data unless a period is named, sides named by stance everywhere, "Chamada da @deb" with "−1 @", checks shown on the checked message, the reply arrow on a call's target, and the winner's burst with a brief result on the meter (`03-judge.md`, `04-ui-design.md`).
+
+Coin flip (2026-10-07): Deb decides who opens; turns alternate from the opener (`state.opener`).
+
 ### Wednesday 2026-10-07 — make the judge real
 - Groq key; the first-run checklist in `03-judge.md`; tune prompts and `maxOutputTokens` with `pnpm judge` and `pnpm mention`; measure tokens per call.
 - Upstash + Vercel; a debate between two real devices on the deployment.
