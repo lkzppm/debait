@@ -222,7 +222,7 @@ async function answerMention(input: MentionInput): Promise<EngineResult<BotReply
   if ((intent === "validate" || intent === "search") && !input.canSearch) {
     return result({
       intent: "off_topic",
-      text: say(locale, "Seus desafios acabaram, então não posso pesquisar na web.", "Your challenges are used up, so I cannot search the web."),
+      text: say(locale, "Suas chamadas da @deb acabaram, então não posso pesquisar na web.", "Your @deb calls are used up, so I cannot search the web."),
       ...empty,
     });
   }
@@ -282,14 +282,14 @@ async function writeRuling(input: RulingInput): Promise<EngineResult<Ruling>> {
   const outcome =
     winner === "draw"
       ? say(locale, "O debate terminou empatado.", "The debate ended in a draw.")
-      : say(locale, `O lado ${side(winner)} argumentou melhor.`, `Side ${side(winner)} argued better.`);
+      : say(locale, `O lado "${input.stances[winner]}" argumentou melhor.`, `The "${input.stances[winner]}" side argued better.`);
   const advice = say(
     locale,
     "Sustente cada afirmação com um dado e responda ao último ponto do adversário.",
     "Back each claim with a figure and answer the opponent's last point.",
   );
   return result({
-    text: `${outcome} ${locale === "pt" ? `Pontos: A ${input.totals.a}, B ${input.totals.b}. Veredito de demonstração, sem IA.` : `Points: A ${input.totals.a}, B ${input.totals.b}. Demo ruling, no AI.`}`,
+    text: `${outcome} ${locale === "pt" ? `Pontos: ${input.stances.a} ${input.totals.a}, ${input.stances.b} ${input.totals.b}. Veredito de demonstração, sem IA.` : `Points: ${input.stances.a} ${input.totals.a}, ${input.stances.b} ${input.totals.b}. Demo ruling, no AI.`}`,
     best: { a: best("a"), b: best("b") },
     advice: { a: advice, b: advice },
   });

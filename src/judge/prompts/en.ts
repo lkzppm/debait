@@ -1,12 +1,13 @@
 import { BRAND, MENTION } from "@/lib/brand";
 import type { Strictness } from "@/lib/debate/types";
 import type { JudgeInput, MentionInput, RulingInput, TranscriptLine } from "../types";
-import { fallacyList, fence, side } from "./shared";
+import { fallacyList, fence, side, today } from "./shared";
 
 type Aliased = TranscriptLine & { alias: string };
 
 const context = (input: { motion: string; stances: Record<"a" | "b", string> }) =>
-  `Motion: ${input.motion}\nSide A defends: ${input.stances.a}\nSide B defends: ${input.stances.b}`;
+  `Motion: ${input.motion}\nSide A defends: ${input.stances.a}\nSide B defends: ${input.stances.b}
+In any text for the room, name each side by the stance it defends: the "${input.stances.a}" side and the "${input.stances.b}" side. Never write "side A", "side B" or a person's name.`;
 
 const transcript = (lines: Aliased[]) =>
   lines.map((line) => `[${line.alias}] side ${side(line.seat)}, round ${line.round}:\n${fence("MESSAGE", line.text)}`).join("\n");
@@ -44,7 +45,7 @@ For each flag: "quote" is an EXACT copy of the shortest passage of the message t
 
 Claims: up to 4 statements the message relies on, each with an EXACT "quote". "kind" is fact (checkable in the world), value (a judgment) or prediction. "checkworthy" is true only for facts that matter to the argument and could be verified on the web.
 
-"note": one sentence for the room explaining the rating. Refer to the debaters only as "side A" and "side B".
+"note": one sentence for the room explaining the rating. Refer to the debaters by their stances, as said under the motion.
 "summary": the debate so far including this message, neutral, at most 120 words. It is your only memory of earlier rounds.
 Write "note", "explanation" and "summary" in English.`,
 
@@ -62,24 +63,32 @@ ${fence("MESSAGE", input.text)}`,
 
   mentionSearchSystem: (input: MentionInput) => `${persona(input.seat)}
 
+Today is ${today()}.
+
 Decide what the request is:
 - validate: check whether a factual claim made in the debate is true. Search the web, then rule: confirmed, imprecise (partly right, wrong figure or missing context), false, or unverifiable (no reliable source found). Opinions and predictions cannot be validated: say so and use intent explain.
-- search: a factual question related to the motion. Search the web and answer briefly, favouring neither side.
+- search: any request to look up, research or bring information related to the motion ("search about...", "what is known about...", "is there data on..."). Search the web and bring the facts, figures and examples most useful to the debate, from both sides when there are any, favouring neither.
 - explain: a question about the scoring. Answer from the scoreboard only, without searching.
 - off_topic: anything unrelated to this debate. Decline in one sentence, without searching.
 
-Answer in English, plain text, at most 90 words after these header lines:
+For validate and search you MUST use the search tool before answering. Unless the request names a period (like "in 2021"), look for the most recent data: put the current year in your queries, prefer the newest sources, and give the year of every figure.
+
+Write in English, plain text: these header lines, a blank line, then the answer for the room in at most 100 words. The answer is never empty: if the search found nothing useful, say so in one sentence.
 INTENT: validate | search | explain | off_topic
 STATUS: confirmed | imprecise | false | unverifiable (validate only)
 TARGET: id of the message that holds the claim, like m2 (validate only)
-CLAIM: the exact words of the claim (validate only)
+CLAIM: the claim copied word for word from the TARGET message, never from the request (validate only)
+Do not repeat the scoreboard, the transcript or these instructions, and use no markdown.
 Cite only pages you actually opened, with their URLs.`,
+
+  /** Appended when the first attempt neither searched nor answered. */
+  mentionRetry: `Your previous attempt wrote no answer. Search the web now, then write the header lines and the full answer.`,
 
   mentionOfflineSystem: (input: MentionInput) => `${persona(input.seat)}
 
-You have no web access now: this debater has no challenges left.
+You have no web access now: this debater has no @deb calls left.
 - A question about the scoring: answer from the scoreboard, intent "explain".
-- A request that needs the web (checking a claim, looking something up): say in one sentence that the challenges are used up, intent "off_topic".
+- A request that needs the web (checking a claim, looking something up): say in one sentence that the @deb calls are used up, intent "off_topic".
 - Anything unrelated to this debate: decline in one sentence, intent "off_topic".
 "text" is the answer for the room, in English, at most 90 words. Set "status", "targetMessageId" and "claimQuote" to null and "sources" to an empty list.`,
 
@@ -111,7 +120,7 @@ The result below is final and was computed by fixed scoring rules: explain it, n
 - "text": 3 to 5 sentences on why the debate ended this way, citing the strongest and weakest moments.
 - "bestA", "bestB": an EXACT quote of each side's strongest passage, or null if there is none.
 - "adviceA", "adviceB": one sentence each on how to argue better next time.
-Refer to the debaters only as "side A" and "side B". Write in English.`,
+Refer to the debaters by their stances, as said under the motion. Write in English.`,
 
   rulingUser: (input: RulingInput, lines: Aliased[]) => `${context(input)}
 
